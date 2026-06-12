@@ -15,7 +15,7 @@ import {
 import type { ReactNode } from 'react';
 import type { AgentScore, HourlyBucket, TypeBucket } from '../types/calls';
 
-const colors = ['#1e8f86', '#f9735b', '#6f5dd5', '#c8f169'];
+const colors = ['#11AEB3', '#FF9700', '#08777d', '#ff6f4f'];
 
 interface ChartPanelProps {
   title: string;
@@ -24,8 +24,8 @@ interface ChartPanelProps {
 
 function ChartPanel({ title, children }: ChartPanelProps) {
   return (
-    <section className="rounded-md border border-slate-200 bg-white p-4 shadow-panel">
-      <h2 className="text-base font-semibold text-ink">{title}</h2>
+    <section className="rounded-md border border-slate-200 bg-white p-4 shadow-panel dark:border-white/10 dark:bg-white/10">
+      <h2 className="text-base font-semibold text-ink dark:text-white">{title}</h2>
       <div className="mt-4 h-72">{children}</div>
     </section>
   );
@@ -40,7 +40,7 @@ export function HourlyChart({ data }: { data: HourlyBucket[] }) {
           <XAxis dataKey="hour" />
           <YAxis allowDecimals={false} />
           <Tooltip />
-          <Line type="monotone" dataKey="calls" stroke="#1e8f86" strokeWidth={3} dot={{ r: 4 }} />
+          <Line type="monotone" dataKey="calls" stroke="#11AEB3" strokeWidth={3} dot={{ r: 4 }} />
         </LineChart>
       </ResponsiveContainer>
     </ChartPanel>
@@ -73,7 +73,7 @@ export function AgentScoreChart({ data }: { data: AgentScore[] }) {
           <XAxis dataKey="agent" />
           <YAxis domain={[0, 5]} />
           <Tooltip />
-          <Bar dataKey="score" fill="#6f5dd5" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="score" fill="#FF9700" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </ChartPanel>

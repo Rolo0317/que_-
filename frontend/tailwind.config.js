@@ -1,18 +1,22 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
       colors: {
-        ink: '#18202f',
-        mist: '#eef3f8',
+        ink: '#102027',
+        mist: '#f5f7f8',
         lime: '#c8f169',
-        teal: '#1e8f86',
-        coral: '#f9735b',
+        teal: '#11AEB3',
+        'que-teal': '#11AEB3',
+        'que-teal-dark': '#08777d',
+        'plus-orange': '#FF9700',
+        coral: '#ff6f4f',
         violet: '#6f5dd5',
       },
       boxShadow: {
-        panel: '0 16px 36px rgba(24, 32, 47, 0.08)',
+        panel: '0 16px 36px rgba(16, 32, 39, 0.1)',
       },
     },
   },

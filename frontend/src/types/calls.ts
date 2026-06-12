@@ -1,12 +1,27 @@
 export interface CallRecord {
   id: string | number;
+  date?: string;
   type: 'Inbound' | 'Outbound' | string;
   agent: string;
   queue: string;
   hour: string;
   durationSeconds: number;
+  waitSeconds?: number;
   abandoned: boolean;
+  answeredWithinSla?: boolean;
+  resolvedFirstContact?: boolean;
+  transferred?: boolean;
   score: number;
+  qaScore?: number;
+  scheduledSeconds?: number;
+  loginSeconds?: number;
+  productiveSeconds?: number;
+  availableSeconds?: number;
+  shrinkageSeconds?: number;
+  adherenceSeconds?: number;
+  scheduled?: boolean;
+  staffed?: boolean;
+  attendanceStatus?: 'Presente' | 'Ausente' | 'Tarde' | string;
 }
 
 export interface Metrics {
@@ -16,6 +31,16 @@ export interface Metrics {
   abandonRate: number;
   avgDuration: number;
   avgScore: number;
+  occupancy: number;
+  utilization: number;
+  shrinkage: number;
+  adherence: number;
+  attendance: number;
+  serviceLevel: number;
+  avgSpeedAnswer: number;
+  firstContactResolution: number;
+  transferRate: number;
+  avgQaScore: number;
 }
 
 export interface HourlyBucket {

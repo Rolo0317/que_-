@@ -13,14 +13,14 @@ interface ReportBuilderProps {
 
 export function ReportBuilder({ selected, onChange }: ReportBuilderProps) {
   return (
-    <fieldset className="rounded-md border border-slate-200 bg-white p-4 shadow-panel">
-      <legend className="px-1 text-sm font-semibold text-ink">Arma tu informe</legend>
+    <fieldset className="rounded-md border border-slate-200 bg-white p-4 shadow-panel dark:border-white/10 dark:bg-white/10">
+      <legend className="px-1 text-sm font-semibold text-ink dark:text-white">Arma tu informe</legend>
       <div className="mt-3 grid gap-2">
         {options.map((option) => (
-          <label key={option.id} className="flex items-center gap-3 text-sm text-slate-700">
+          <label key={option.id} className="flex items-center gap-3 text-sm text-slate-700 dark:text-white/75">
             <input
               type="checkbox"
-              className="h-4 w-4 accent-teal"
+              className="h-4 w-4 accent-que-teal"
               checked={selected.includes(option.id)}
               onChange={(event) => {
                 const next = event.target.checked

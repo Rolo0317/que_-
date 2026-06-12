@@ -12,10 +12,38 @@ const columnMap: Record<string, keyof CallRecord> = {
   hour: 'hour',
   duracion: 'durationSeconds',
   durationseconds: 'durationSeconds',
+  espera: 'waitSeconds',
+  waitseconds: 'waitSeconds',
   abandonada: 'abandoned',
   abandoned: 'abandoned',
+  sla: 'answeredWithinSla',
+  answeredwithinsla: 'answeredWithinSla',
+  fcr: 'resolvedFirstContact',
+  resolvedfirstcontact: 'resolvedFirstContact',
+  transferida: 'transferred',
+  transferred: 'transferred',
   calificacion: 'score',
   score: 'score',
+  calidad: 'qaScore',
+  qascore: 'qaScore',
+  programado: 'scheduledSeconds',
+  scheduledseconds: 'scheduledSeconds',
+  login: 'loginSeconds',
+  loginseconds: 'loginSeconds',
+  productivo: 'productiveSeconds',
+  productiveseconds: 'productiveSeconds',
+  disponible: 'availableSeconds',
+  availableseconds: 'availableSeconds',
+  shrinkage: 'shrinkageSeconds',
+  shrinkageseconds: 'shrinkageSeconds',
+  adherencia: 'adherenceSeconds',
+  adherenceseconds: 'adherenceSeconds',
+  planificado: 'scheduled',
+  scheduled: 'scheduled',
+  conectado: 'staffed',
+  staffed: 'staffed',
+  asistencia: 'attendanceStatus',
+  attendancestatus: 'attendanceStatus',
 };
 
 const normalizeKey = (key: string): string =>
@@ -50,8 +78,32 @@ export async function parseExcelFile(file: File): Promise<CallRecord[]> {
       queue: String(normalized.queue || 'General'),
       hour: String(normalized.hour || 'Sin hora'),
       durationSeconds: Number(normalized.durationSeconds || 0),
+      waitSeconds: Number(normalized.waitSeconds || 0),
       abandoned: normalized.abandoned === true || String(normalized.abandoned).toLowerCase() === 'true',
+      answeredWithinSla:
+        normalized.answeredWithinSla === true ||
+        ['true', 'si', 'yes', '1'].includes(String(normalized.answeredWithinSla).toLowerCase()),
+      resolvedFirstContact:
+        normalized.resolvedFirstContact === true ||
+        ['true', 'si', 'yes', '1'].includes(String(normalized.resolvedFirstContact).toLowerCase()),
+      transferred:
+        normalized.transferred === true ||
+        ['true', 'si', 'yes', '1'].includes(String(normalized.transferred).toLowerCase()),
       score: Number(normalized.score || 0),
+      qaScore: Number(normalized.qaScore || 0),
+      scheduledSeconds: Number(normalized.scheduledSeconds || 0),
+      loginSeconds: Number(normalized.loginSeconds || 0),
+      productiveSeconds: Number(normalized.productiveSeconds || 0),
+      availableSeconds: Number(normalized.availableSeconds || 0),
+      shrinkageSeconds: Number(normalized.shrinkageSeconds || 0),
+      adherenceSeconds: Number(normalized.adherenceSeconds || 0),
+      scheduled:
+        normalized.scheduled === undefined ||
+        ['true', 'si', 'yes', '1'].includes(String(normalized.scheduled).toLowerCase()),
+      staffed:
+        normalized.staffed === undefined ||
+        ['true', 'si', 'yes', '1'].includes(String(normalized.staffed).toLowerCase()),
+      attendanceStatus: String(normalized.attendanceStatus || 'Presente'),
     };
   });
 }
