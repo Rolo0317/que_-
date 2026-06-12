@@ -15,7 +15,10 @@ export function FileUploader({ onFile }: FileUploaderProps) {
         accept=".xlsx"
         onChange={(event) => {
           const [file] = event.target.files || [];
-          if (file) onFile(file);
+          if (file) {
+            onFile(file);
+            event.target.value = '';
+          }
         }}
       />
     </label>
