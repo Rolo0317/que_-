@@ -58,6 +58,19 @@ export interface AgentScore {
   score: number;
 }
 
+export interface AgentStats {
+  agent: string;
+  totalCalls: number;
+  avgScore: number;
+  avgQaScore: number;
+  slaRate: number;
+  fcrRate: number;
+  transferRate: number;
+  abandonRate: number;
+  avgDuration: number;
+  avgWait: number;
+}
+
 export interface SlaHourBucket {
   hour: string;
   sla: number;

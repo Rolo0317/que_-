@@ -1,4 +1,4 @@
-import type { AbandonHourBucket, AgentScore, CallRecord, HourlyBucket, Metrics, QueueBucket, SlaHourBucket, TypeBucket } from '../types/calls';
+import type { AbandonHourBucket, AgentScore, AgentStats, CallRecord, HourlyBucket, Metrics, QueueBucket, SlaHourBucket, TypeBucket } from '../types/calls';
 
 const normalizeType = (value = '') => String(value).trim().toLowerCase();
 
@@ -70,6 +70,30 @@ export function callsByType(calls: CallRecord[]): TypeBucket[] {
   }, {});
 
   return Object.entries(buckets).map(([name, value]) => ({ name, value }));
+}
+
+export function agentDetailStats(calls: CallRecord[]): AgentStats[] {
+  const map = new Map<string, CallRecord[]>();
+  calls.forEach((call) => {
+    const a = call.agent || 'Sin agente';
+    if (!map.has(a)) map.set(a, []);
+    map.get(a)!.push(call);
+  });
+  return Array.from(map, ([agent, ac]) => {
+    const m = calculateMetrics(ac);
+    return {
+      agent,
+      totalCalls: ac.length,
+      avgScore: m.avgScore,
+      avgQaScore: m.avgQaScore,
+      slaRate: m.serviceLevel,
+      fcrRate: m.firstContactResolution,
+      transferRate: m.transferRate,
+      abandonRate: m.abandonRate,
+      avgDuration: m.avgDuration,
+      avgWait: m.avgSpeedAnswer,
+    };
+  }).sort((a, b) => b.totalCalls - a.totalCalls);
 }
 
 export function slaByHour(calls: CallRecord[]): SlaHourBucket[] {

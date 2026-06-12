@@ -205,7 +205,7 @@ export function DataManager({ datasets, activeId, onActivate, onDelete, onUpload
                       Usar este
                     </button>
                   )}
-                  {dataset.source !== 'demo' && (
+                  {datasets.length > 1 && (
                     <button
                       type="button"
                       onClick={() => onDelete(dataset.id)}
