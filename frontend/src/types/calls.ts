@@ -58,6 +58,21 @@ export interface AgentScore {
   score: number;
 }
 
+export interface SlaHourBucket {
+  hour: string;
+  sla: number;
+}
+
+export interface AbandonHourBucket {
+  hour: string;
+  abandonRate: number;
+}
+
+export interface QueueBucket {
+  name: string;
+  value: number;
+}
+
 export interface ReportResponse {
   data: CallRecord[];
   metrics: Metrics;

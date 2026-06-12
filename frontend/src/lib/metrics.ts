@@ -1,4 +1,4 @@
-import type { AgentScore, CallRecord, HourlyBucket, Metrics, TypeBucket } from '../types/calls';
+import type { AbandonHourBucket, AgentScore, CallRecord, HourlyBucket, Metrics, QueueBucket, SlaHourBucket, TypeBucket } from '../types/calls';
 
 const normalizeType = (value = '') => String(value).trim().toLowerCase();
 
@@ -69,6 +69,45 @@ export function callsByType(calls: CallRecord[]): TypeBucket[] {
     return acc;
   }, {});
 
+  return Object.entries(buckets).map(([name, value]) => ({ name, value }));
+}
+
+export function slaByHour(calls: CallRecord[]): SlaHourBucket[] {
+  const buckets = new Map<string, { total: number; withinSla: number }>();
+  calls.forEach((call) => {
+    const hour = call.hour || 'Sin hora';
+    const current = buckets.get(hour) ?? { total: 0, withinSla: 0 };
+    current.total += 1;
+    if (call.answeredWithinSla) current.withinSla += 1;
+    buckets.set(hour, current);
+  });
+  return Array.from(buckets, ([hour, { total, withinSla }]) => ({
+    hour,
+    sla: total ? Math.round((withinSla / total) * 100) : 0,
+  })).sort((a, b) => a.hour.localeCompare(b.hour));
+}
+
+export function abandonByHour(calls: CallRecord[]): AbandonHourBucket[] {
+  const buckets = new Map<string, { total: number; abandoned: number }>();
+  calls.forEach((call) => {
+    const hour = call.hour || 'Sin hora';
+    const current = buckets.get(hour) ?? { total: 0, abandoned: 0 };
+    current.total += 1;
+    if (call.abandoned) current.abandoned += 1;
+    buckets.set(hour, current);
+  });
+  return Array.from(buckets, ([hour, { total, abandoned }]) => ({
+    hour,
+    abandonRate: total ? Math.round((abandoned / total) * 100) : 0,
+  })).sort((a, b) => a.hour.localeCompare(b.hour));
+}
+
+export function callsByQueue(calls: CallRecord[]): QueueBucket[] {
+  const buckets = calls.reduce<Record<string, number>>((acc, call) => {
+    const queue = call.queue || 'Sin cola';
+    acc[queue] = (acc[queue] ?? 0) + 1;
+    return acc;
+  }, {});
   return Object.entries(buckets).map(([name, value]) => ({ name, value }));
 }
 
