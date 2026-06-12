@@ -1,3 +1,5 @@
+import { BrandLogo } from './BrandLogo';
+
 const options = [
   { id: 'hourly', label: 'Llamadas por hora' },
   { id: 'mix', label: 'Mix Inbound/Outbound' },
@@ -13,26 +15,36 @@ interface ReportBuilderProps {
 
 export function ReportBuilder({ selected, onChange }: ReportBuilderProps) {
   return (
-    <fieldset className="rounded-md border border-slate-200 bg-white p-4 shadow-panel dark:border-white/10 dark:bg-white/10">
-      <legend className="px-1 text-sm font-semibold text-ink dark:text-white">Arma tu informe</legend>
-      <div className="mt-3 grid gap-2">
-        {options.map((option) => (
-          <label key={option.id} className="flex items-center gap-3 text-sm text-slate-700 dark:text-white/75">
-            <input
-              type="checkbox"
-              className="h-4 w-4 accent-que-teal"
-              checked={selected.includes(option.id)}
-              onChange={(event) => {
-                const next = event.target.checked
-                  ? [...selected, option.id]
-                  : selected.filter((item) => item !== option.id);
-                onChange(next);
-              }}
-            />
-            {option.label}
-          </label>
-        ))}
+    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-panel dark:border-white/10 dark:bg-white/10">
+      {/* Header con logo */}
+      <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-ink to-slate-800 px-4 py-3 dark:border-white/10">
+        <span className="text-sm font-semibold text-white">Arma tu informe</span>
+        <BrandLogo className="w-16 opacity-90" />
       </div>
-    </fieldset>
+      <fieldset className="p-4">
+        <legend className="sr-only">Selecciona las graficas a mostrar</legend>
+        <div className="grid gap-3">
+          {options.map((option) => (
+            <label
+              key={option.id}
+              className="flex cursor-pointer items-center gap-3 rounded-md p-2 text-sm text-slate-700 transition hover:bg-slate-50 dark:text-white/75 dark:hover:bg-white/5"
+            >
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-que-teal"
+                checked={selected.includes(option.id)}
+                onChange={(event) => {
+                  const next = event.target.checked
+                    ? [...selected, option.id]
+                    : selected.filter((item) => item !== option.id);
+                  onChange(next);
+                }}
+              />
+              {option.label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+    </div>
   );
 }

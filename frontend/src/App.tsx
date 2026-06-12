@@ -245,10 +245,18 @@ function App() {
           aria-hidden="true"
         />
         <aside className="fixed inset-y-0 left-0 hidden w-20 flex-col items-center gap-6 bg-ink py-6 text-white lg:flex">
-          <BrandLogo className="w-14" />
-          <PhoneCall size={22} aria-label="Llamadas" />
-          <BarChart3 size={22} aria-label="Reportes" />
-          <Activity size={22} aria-label="Actividad" />
+          <div className="flex flex-col items-center gap-1">
+            <BrandLogo className="w-12" />
+            <span className="text-[9px] font-bold tracking-[0.2em] text-white/50 uppercase">BPO</span>
+          </div>
+          <div className="h-px w-8 bg-white/10" />
+          <PhoneCall size={20} aria-label="Llamadas" className="text-white/70 hover:text-que-teal transition-colors" />
+          <BarChart3 size={20} aria-label="Reportes" className="text-white/70 hover:text-que-teal transition-colors" />
+          <Activity size={20} aria-label="Actividad" className="text-white/70 hover:text-que-teal transition-colors" />
+          <div className="mt-auto">
+            <div className="h-px w-8 bg-white/10 mb-4" />
+            <img src="/logo-que-plus.svg" alt="" aria-hidden="true" className="w-8 opacity-20" />
+          </div>
         </aside>
 
         <main className="relative mx-auto max-w-7xl px-4 py-6 lg:ml-20 lg:px-8">
@@ -260,7 +268,8 @@ function App() {
             className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-white/10 md:flex-row md:items-center md:justify-between"
           >
             <div>
-              <BrandLogo className="mb-3 w-40 lg:hidden" />
+              {/* Logo: pequeño en desktop (sidebar lo muestra completo), grande en mobile */}
+              <BrandLogo className="mb-3 w-40 lg:mb-2 lg:w-28" />
               <p className="text-sm font-semibold uppercase tracking-wide text-que-teal">BPO Analytics</p>
               <h1 className="mt-1 text-3xl font-semibold text-ink dark:text-white">Dashboard de call center</h1>
               <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
