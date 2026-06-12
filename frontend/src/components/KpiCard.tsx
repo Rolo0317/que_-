@@ -1,4 +1,10 @@
-export function KpiCard({ label, value, helper }) {
+interface KpiCardProps {
+  label: string;
+  value: string | number;
+  helper: string;
+}
+
+export function KpiCard({ label, value, helper }: KpiCardProps) {
   return (
     <article className="rounded-md border border-slate-200 bg-white p-4 shadow-panel">
       <p className="text-sm font-medium text-slate-500">{label}</p>

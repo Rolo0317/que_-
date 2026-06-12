@@ -1,11 +1,13 @@
+import type { CallRecord, Metrics, ReportResponse } from '../types/calls.js';
+
 const normalizeType = (value = '') => String(value).trim().toLowerCase();
 
-export function filterCalls(calls, type) {
+export function filterCalls(calls: CallRecord[], type?: string): CallRecord[] {
   if (!type || type === 'Todos') return calls;
   return calls.filter((call) => normalizeType(call.type) === normalizeType(type));
 }
 
-export function calculateMetrics(calls) {
+export function calculateMetrics(calls: CallRecord[]): Metrics {
   const total = calls.length;
   const inbound = calls.filter((call) => normalizeType(call.type) === 'inbound').length;
   const outbound = calls.filter((call) => normalizeType(call.type) === 'outbound').length;
@@ -23,7 +25,7 @@ export function calculateMetrics(calls) {
   };
 }
 
-export function buildReport(calls, type = 'Todos') {
+export function buildReport(calls: CallRecord[], type = 'Todos'): ReportResponse {
   const filtered = filterCalls(calls, type);
   return {
     data: filtered,

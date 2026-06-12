@@ -1,6 +1,8 @@
+import type { ReportResponse } from '../types/calls';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-export async function fetchReport(type = 'Todos') {
+export async function fetchReport(type = 'Todos'): Promise<ReportResponse> {
   const query = new URLSearchParams();
   if (type && type !== 'Todos') query.set('type', type);
 
@@ -9,5 +11,5 @@ export async function fetchReport(type = 'Todos') {
     throw new Error('No se pudo consultar la API.');
   }
 
-  return response.json();
+  return response.json() as Promise<ReportResponse>;
 }

@@ -1,5 +1,5 @@
 import cors from 'cors';
-import express from 'express';
+import express, { type ErrorRequestHandler } from 'express';
 import { env } from './config/env.js';
 import { router } from './routes/index.js';
 
@@ -10,10 +10,12 @@ export function createApp() {
   app.use(express.json({ limit: '2mb' }));
   app.use('/api', router);
 
-  app.use((error, _request, response, _next) => {
+  const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
     console.error(error);
     response.status(500).json({ message: 'Error interno del servidor.' });
-  });
+  };
+
+  app.use(errorHandler);
 
   return app;
 }

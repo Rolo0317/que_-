@@ -4,8 +4,8 @@ Dashboard analitico para operaciones de call center BPO. El proyecto permite car
 
 ## Estructura
 
-- `frontend/`: aplicacion React con Vite, Tailwind CSS, Recharts y SheetJS.
-- `backend/`: API Node.js/Express para recibir, procesar y exponer datos.
+- `frontend/`: aplicacion React + TypeScript con Vite, Tailwind CSS, Recharts y lector de Excel.
+- `backend/`: API Node.js/Express + TypeScript para recibir, procesar y exponer datos.
 - `planning.md`: fases del proyecto y entregables.
 - `docker-compose.yml`: orquestacion local del frontend y backend.
 
@@ -19,6 +19,12 @@ Dashboard analitico para operaciones de call center BPO. El proyecto permite car
 
 ```bash
 npm install
+```
+
+Copia las variables de entorno cuando necesites correr el backend con valores locales:
+
+```bash
+copy backend\.env.example backend\.env
 ```
 
 ## Desarrollo
@@ -54,6 +60,27 @@ El frontend se sirve en `http://localhost:8080` y el backend en `http://localhos
 Para Vercel, configura el proyecto apuntando a `frontend/`, usa `npm run build` como build command y `dist` como output directory. Define `VITE_API_URL` con la URL publica del backend.
 
 El backend puede desplegarse como contenedor usando `backend/Dockerfile`; define `PORT` y `CORS_ORIGIN` segun el entorno.
+
+## Datos esperados
+
+El Excel debe ser `.xlsx` y puede incluir columnas en espanol o ingles:
+
+- `tipo` o `type`: `Inbound` / `Outbound`.
+- `agente` o `agent`.
+- `cola` o `queue`.
+- `hora` o `hour`.
+- `duracion` o `durationSeconds`.
+- `abandonada` o `abandoned`.
+- `calificacion` o `score`.
+
+Si no cargas archivo, el dashboard usa datos demo. El boton `API` consulta `GET /api/data` y el cargador de Excel procesa el archivo en el navegador.
+
+## API
+
+- `GET /api/health`: estado del servicio.
+- `GET /api/data?type=Inbound`: datos demo con metricas calculadas.
+- `POST /api/data`: recibe `{ "data": [...] }` y devuelve reporte.
+- `POST /api/upload`: recibe un formulario multipart con campo `file`.
 
 ## Buenas practicas
 

@@ -1,11 +1,13 @@
+import type { AgentScore, CallRecord, HourlyBucket, Metrics, TypeBucket } from '../types/calls';
+
 const normalizeType = (value = '') => String(value).trim().toLowerCase();
 
-export function filterCalls(calls, type) {
+export function filterCalls(calls: CallRecord[], type: string): CallRecord[] {
   if (!type || type === 'Todos') return calls;
   return calls.filter((call) => normalizeType(call.type) === normalizeType(type));
 }
 
-export function calculateMetrics(calls) {
+export function calculateMetrics(calls: CallRecord[]): Metrics {
   const total = calls.length;
   const inbound = calls.filter((call) => normalizeType(call.type) === 'inbound').length;
   const outbound = calls.filter((call) => normalizeType(call.type) === 'outbound').length;
@@ -23,8 +25,8 @@ export function calculateMetrics(calls) {
   };
 }
 
-export function callsByHour(calls) {
-  const buckets = new Map();
+export function callsByHour(calls: CallRecord[]): HourlyBucket[] {
+  const buckets = new Map<string, number>();
   calls.forEach((call) => {
     const hour = call.hour || 'Sin hora';
     buckets.set(hour, (buckets.get(hour) || 0) + 1);
@@ -35,8 +37,8 @@ export function callsByHour(calls) {
   );
 }
 
-export function callsByType(calls) {
-  const buckets = calls.reduce((acc, call) => {
+export function callsByType(calls: CallRecord[]): TypeBucket[] {
+  const buckets = calls.reduce<Record<string, number>>((acc, call) => {
     const type = call.type || 'Sin tipo';
     acc[type] = (acc[type] || 0) + 1;
     return acc;
@@ -45,8 +47,8 @@ export function callsByType(calls) {
   return Object.entries(buckets).map(([name, value]) => ({ name, value }));
 }
 
-export function agentScores(calls) {
-  const buckets = new Map();
+export function agentScores(calls: CallRecord[]): AgentScore[] {
+  const buckets = new Map<string, { agent: string; total: number; count: number }>();
   calls.forEach((call) => {
     const agent = call.agent || 'Sin agente';
     const current = buckets.get(agent) || { agent, total: 0, count: 0 };

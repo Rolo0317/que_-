@@ -1,23 +1,26 @@
 import { Activity, BarChart3, Headphones, PhoneCall, RefreshCw, Star } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { AgentScoreChart, HourlyChart, TypeMixChart } from './components/Charts.jsx';
-import { FileUploader } from './components/FileUploader.jsx';
-import { KpiCard } from './components/KpiCard.jsx';
-import { ReportBuilder } from './components/ReportBuilder.jsx';
-import { sampleCalls } from './data/sampleCalls.js';
-import { fetchReport } from './lib/api.js';
-import { parseExcelFile } from './lib/excel.js';
-import { agentScores, calculateMetrics, callsByHour, callsByType, filterCalls } from './lib/metrics.js';
+import { AgentScoreChart, HourlyChart, TypeMixChart } from './components/Charts';
+import { FileUploader } from './components/FileUploader';
+import { KpiCard } from './components/KpiCard';
+import { ReportBuilder } from './components/ReportBuilder';
+import { sampleCalls } from './data/sampleCalls';
+import { fetchReport } from './lib/api';
+import { parseExcelFile } from './lib/excel';
+import { agentScores, calculateMetrics, callsByHour, callsByType, filterCalls } from './lib/metrics';
+import type { CallRecord } from './types/calls';
 
-const filters = ['Todos', 'Inbound', 'Outbound'];
+const filters = ['Todos', 'Inbound', 'Outbound'] as const;
+type CallFilter = (typeof filters)[number];
+type ChartId = 'hourly' | 'mix' | 'scores';
 
-const formatPercent = (value) => `${(value * 100).toFixed(1)}%`;
-const formatDuration = (seconds) => `${Math.round(seconds)} s`;
+const formatPercent = (value: number) => `${(value * 100).toFixed(1)}%`;
+const formatDuration = (seconds: number) => `${Math.round(seconds)} s`;
 
 function App() {
-  const [calls, setCalls] = useState(sampleCalls);
-  const [filter, setFilter] = useState('Todos');
-  const [selectedCharts, setSelectedCharts] = useState(['hourly', 'mix', 'scores']);
+  const [calls, setCalls] = useState<CallRecord[]>(sampleCalls);
+  const [filter, setFilter] = useState<CallFilter>('Todos');
+  const [selectedCharts, setSelectedCharts] = useState<ChartId[]>(['hourly', 'mix', 'scores']);
   const [status, setStatus] = useState('Datos demo cargados');
 
   const visibleCalls = useMemo(() => filterCalls(calls, filter), [calls, filter]);
@@ -26,7 +29,7 @@ function App() {
   const typeData = useMemo(() => callsByType(visibleCalls), [visibleCalls]);
   const scoreData = useMemo(() => agentScores(visibleCalls), [visibleCalls]);
 
-  async function handleFile(file) {
+  async function handleFile(file: File) {
     try {
       const rows = await parseExcelFile(file);
       setCalls(rows);
@@ -68,7 +71,7 @@ function App() {
             <select
               className="h-11 rounded-md border border-slate-300 bg-white px-3 text-sm text-ink shadow-sm"
               value={filter}
-              onChange={(event) => setFilter(event.target.value)}
+              onChange={(event) => setFilter(event.target.value as CallFilter)}
               aria-label="Filtrar tipo de llamada"
             >
               {filters.map((item) => (

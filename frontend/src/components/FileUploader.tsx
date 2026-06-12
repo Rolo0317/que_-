@@ -1,6 +1,10 @@
 import { Upload } from 'lucide-react';
 
-export function FileUploader({ onFile }) {
+interface FileUploaderProps {
+  onFile: (file: File) => void;
+}
+
+export function FileUploader({ onFile }: FileUploaderProps) {
   return (
     <label className="flex cursor-pointer items-center gap-3 rounded-md border border-dashed border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-panel transition hover:border-teal">
       <Upload size={18} aria-hidden="true" />

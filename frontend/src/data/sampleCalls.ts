@@ -1,4 +1,6 @@
-export const sampleCalls = [
+import type { CallRecord } from '../types/calls';
+
+export const sampleCalls: CallRecord[] = [
   { id: 1, type: 'Inbound', agent: 'Ana Ruiz', queue: 'Soporte', hour: '08:00', durationSeconds: 312, abandoned: false, score: 4.7 },
   { id: 2, type: 'Outbound', agent: 'Luis Mora', queue: 'Ventas', hour: '09:00', durationSeconds: 244, abandoned: false, score: 4.3 },
   { id: 3, type: 'Inbound', agent: 'Mia Cano', queue: 'Soporte', hour: '10:00', durationSeconds: 186, abandoned: true, score: 3.9 },

@@ -12,10 +12,17 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import type { ReactNode } from 'react';
+import type { AgentScore, HourlyBucket, TypeBucket } from '../types/calls';
 
 const colors = ['#1e8f86', '#f9735b', '#6f5dd5', '#c8f169'];
 
-function ChartPanel({ title, children }) {
+interface ChartPanelProps {
+  title: string;
+  children: ReactNode;
+}
+
+function ChartPanel({ title, children }: ChartPanelProps) {
   return (
     <section className="rounded-md border border-slate-200 bg-white p-4 shadow-panel">
       <h2 className="text-base font-semibold text-ink">{title}</h2>
@@ -24,7 +31,7 @@ function ChartPanel({ title, children }) {
   );
 }
 
-export function HourlyChart({ data }) {
+export function HourlyChart({ data }: { data: HourlyBucket[] }) {
   return (
     <ChartPanel title="Llamadas por hora">
       <ResponsiveContainer width="100%" height="100%">
@@ -40,7 +47,7 @@ export function HourlyChart({ data }) {
   );
 }
 
-export function TypeMixChart({ data }) {
+export function TypeMixChart({ data }: { data: TypeBucket[] }) {
   return (
     <ChartPanel title="Mix Inbound/Outbound">
       <ResponsiveContainer width="100%" height="100%">
@@ -57,7 +64,7 @@ export function TypeMixChart({ data }) {
   );
 }
 
-export function AgentScoreChart({ data }) {
+export function AgentScoreChart({ data }: { data: AgentScore[] }) {
   return (
     <ChartPanel title="Calificacion por agente">
       <ResponsiveContainer width="100%" height="100%">

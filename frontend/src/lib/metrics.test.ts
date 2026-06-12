@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { calculateMetrics, filterCalls } from './metrics.js';
+import type { CallRecord } from '../types/calls';
 
-const calls = [
-  { type: 'Inbound', durationSeconds: 100, abandoned: false, score: 5 },
-  { type: 'Outbound', durationSeconds: 200, abandoned: true, score: 3 },
+const calls: CallRecord[] = [
+  { id: 1, type: 'Inbound', agent: 'Ana', queue: 'Soporte', hour: '08:00', durationSeconds: 100, abandoned: false, score: 5 },
+  { id: 2, type: 'Outbound', agent: 'Luis', queue: 'Ventas', hour: '09:00', durationSeconds: 200, abandoned: true, score: 3 },
 ];
 
 describe('metrics', () => {

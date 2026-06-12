@@ -2,9 +2,16 @@ const options = [
   { id: 'hourly', label: 'Llamadas por hora' },
   { id: 'mix', label: 'Mix Inbound/Outbound' },
   { id: 'scores', label: 'Calificacion por agente' },
-];
+] as const;
 
-export function ReportBuilder({ selected, onChange }) {
+type ChartId = (typeof options)[number]['id'];
+
+interface ReportBuilderProps {
+  selected: ChartId[];
+  onChange: (selected: ChartId[]) => void;
+}
+
+export function ReportBuilder({ selected, onChange }: ReportBuilderProps) {
   return (
     <fieldset className="rounded-md border border-slate-200 bg-white p-4 shadow-panel">
       <legend className="px-1 text-sm font-semibold text-ink">Arma tu informe</legend>
