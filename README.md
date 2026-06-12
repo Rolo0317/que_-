@@ -55,6 +55,15 @@ docker compose up --build
 
 El frontend se sirve en `http://localhost:8080` y el backend en `http://localhost:3000`.
 
+En Windows, Docker Desktop requiere WSL2. Si Docker Desktop abre pero `docker version` no muestra servidor, habilita WSL y reinicia Windows:
+
+```powershell
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+```
+
+Luego reinicia, abre Docker Desktop y ejecuta `docker compose up --build`.
+
 ## Despliegue
 
 Para Vercel, configura el proyecto apuntando a `frontend/`, usa `npm run build` como build command y `dist` como output directory. Define `VITE_API_URL` con la URL publica del backend.

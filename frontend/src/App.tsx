@@ -1,11 +1,10 @@
 import { Activity, BarChart3, Headphones, PhoneCall, RefreshCw, Star } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { AgentScoreChart, HourlyChart, TypeMixChart } from './components/Charts';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { FileUploader } from './components/FileUploader';
 import { KpiCard } from './components/KpiCard';
 import { ReportBuilder } from './components/ReportBuilder';
 import { sampleCalls } from './data/sampleCalls';
-import { fetchReport } from './lib/api';
+import { fetchHealth, fetchReport, uploadReport } from './lib/api';
 import { parseExcelFile } from './lib/excel';
 import { agentScores, calculateMetrics, callsByHour, callsByType, filterCalls } from './lib/metrics';
 import type { CallRecord } from './types/calls';
@@ -13,6 +12,16 @@ import type { CallRecord } from './types/calls';
 const filters = ['Todos', 'Inbound', 'Outbound'] as const;
 type CallFilter = (typeof filters)[number];
 type ChartId = 'hourly' | 'mix' | 'scores';
+
+const HourlyChart = lazy(() =>
+  import('./components/Charts').then((module) => ({ default: module.HourlyChart })),
+);
+const TypeMixChart = lazy(() =>
+  import('./components/Charts').then((module) => ({ default: module.TypeMixChart })),
+);
+const AgentScoreChart = lazy(() =>
+  import('./components/Charts').then((module) => ({ default: module.AgentScoreChart })),
+);
 
 const formatPercent = (value: number) => `${(value * 100).toFixed(1)}%`;
 const formatDuration = (seconds: number) => `${Math.round(seconds)} s`;
@@ -22,6 +31,7 @@ function App() {
   const [filter, setFilter] = useState<CallFilter>('Todos');
   const [selectedCharts, setSelectedCharts] = useState<ChartId[]>(['hourly', 'mix', 'scores']);
   const [status, setStatus] = useState('Datos demo cargados');
+  const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
   const visibleCalls = useMemo(() => filterCalls(calls, filter), [calls, filter]);
   const metrics = useMemo(() => calculateMetrics(visibleCalls), [visibleCalls]);
@@ -29,14 +39,38 @@ function App() {
   const typeData = useMemo(() => callsByType(visibleCalls), [visibleCalls]);
   const scoreData = useMemo(() => agentScores(visibleCalls), [visibleCalls]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    fetchHealth()
+      .then(() => {
+        if (isMounted) setApiStatus('online');
+      })
+      .catch(() => {
+        if (isMounted) setApiStatus('offline');
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   async function handleFile(file: File) {
     try {
-      const rows = await parseExcelFile(file);
-      setCalls(rows);
-      setStatus(`${rows.length} registros cargados desde ${file.name}`);
+      const report = await uploadReport(file, filter);
+      setCalls(report.data);
+      setApiStatus('online');
+      setStatus(`${report.data.length} registros procesados por API desde ${file.name}`);
     } catch (error) {
-      setStatus('No se pudo leer el archivo. Revisa el formato del Excel.');
-      console.error(error);
+      try {
+        const rows = await parseExcelFile(file);
+        setCalls(rows);
+        setApiStatus('offline');
+        setStatus(`${rows.length} registros procesados localmente desde ${file.name}`);
+      } catch (localError) {
+        setStatus('No se pudo leer el archivo. Revisa el formato del Excel.');
+        console.error(error, localError);
+      }
     }
   }
 
@@ -65,7 +99,21 @@ function App() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-teal">BPO Analytics</p>
             <h1 className="mt-1 text-3xl font-semibold text-ink">Dashboard de call center</h1>
-            <p className="mt-2 text-sm text-slate-600">{status}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-600">
+              <span>{status}</span>
+              <span className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium">
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    apiStatus === 'online'
+                      ? 'bg-teal'
+                      : apiStatus === 'offline'
+                        ? 'bg-coral'
+                        : 'bg-slate-300'
+                  }`}
+                />
+                API {apiStatus === 'online' ? 'online' : apiStatus === 'offline' ? 'offline' : 'verificando'}
+              </span>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <select
@@ -114,9 +162,17 @@ function App() {
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            {selectedCharts.includes('hourly') && <HourlyChart data={hourlyData} />}
-            {selectedCharts.includes('mix') && <TypeMixChart data={typeData} />}
-            {selectedCharts.includes('scores') && <AgentScoreChart data={scoreData} />}
+            <Suspense
+              fallback={
+                <section className="rounded-md border border-slate-200 bg-white p-4 shadow-panel">
+                  <div className="h-72 animate-pulse rounded-md bg-slate-100" />
+                </section>
+              }
+            >
+              {selectedCharts.includes('hourly') && <HourlyChart data={hourlyData} />}
+              {selectedCharts.includes('mix') && <TypeMixChart data={typeData} />}
+              {selectedCharts.includes('scores') && <AgentScoreChart data={scoreData} />}
+            </Suspense>
           </div>
         </section>
       </main>
