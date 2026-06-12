@@ -1,10 +1,11 @@
-import { Activity, BarChart3, Clock, Headphones, PhoneCall, Star } from 'lucide-react';
+import { Activity, BarChart3, Headphones, PhoneCall, RefreshCw, Star } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { AgentScoreChart, HourlyChart, TypeMixChart } from './components/Charts.jsx';
 import { FileUploader } from './components/FileUploader.jsx';
 import { KpiCard } from './components/KpiCard.jsx';
 import { ReportBuilder } from './components/ReportBuilder.jsx';
 import { sampleCalls } from './data/sampleCalls.js';
+import { fetchReport } from './lib/api.js';
 import { parseExcelFile } from './lib/excel.js';
 import { agentScores, calculateMetrics, callsByHour, callsByType, filterCalls } from './lib/metrics.js';
 
@@ -36,6 +37,17 @@ function App() {
     }
   }
 
+  async function loadApiData() {
+    try {
+      const report = await fetchReport(filter);
+      setCalls(report.data);
+      setStatus(`API conectada: ${report.data.length} registros recibidos`);
+    } catch (error) {
+      setStatus('No se pudo conectar con la API. Mantengo los datos actuales.');
+      console.error(error);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-mist">
       <aside className="fixed inset-y-0 left-0 hidden w-20 flex-col items-center gap-6 bg-ink py-6 text-white lg:flex">
@@ -63,6 +75,16 @@ function App() {
                 <option key={item}>{item}</option>
               ))}
             </select>
+            <button
+              className="flex h-11 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-ink shadow-sm transition hover:border-teal"
+              type="button"
+              onClick={loadApiData}
+              aria-label="Cargar datos desde la API"
+              title="Cargar datos desde la API"
+            >
+              <RefreshCw size={17} aria-hidden="true" />
+              API
+            </button>
             <FileUploader onFile={handleFile} />
           </div>
         </header>
