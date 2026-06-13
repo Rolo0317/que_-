@@ -2,6 +2,7 @@ import {
   CheckCircle2,
   Cloud,
   Database,
+  Download,
   FileSpreadsheet,
   Info,
   Trash2,
@@ -244,6 +245,16 @@ export function DataManager({ datasets, activeId, onActivate, onDelete, onUpload
         <p className="mt-1 text-xs text-slate-400 dark:text-white/25">
           Formato .xlsx · Máximo 5 MB
         </p>
+
+        {/* Download template */}
+        <a
+          href="/plantilla-queplus.xlsx"
+          download="plantilla-queplus.xlsx"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-que-teal/40 bg-que-teal/5 px-3 py-1.5 text-xs font-semibold text-que-teal transition hover:bg-que-teal/10"
+        >
+          <Download size={12} />
+          Descargar plantilla de ejemplo
+        </a>
 
         {/* Column guide toggle */}
         <button

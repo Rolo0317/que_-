@@ -2,6 +2,9 @@ import { readSheet } from 'read-excel-file/browser';
 import type { CallRecord } from '../types/calls';
 
 const columnMap: Record<string, keyof CallRecord> = {
+  id: 'id',
+  fecha: 'date',
+  date: 'date',
   tipo: 'type',
   type: 'type',
   agente: 'agent',
@@ -73,6 +76,7 @@ export async function parseExcelFile(file: File): Promise<CallRecord[]> {
 
     return {
       id: String(normalized.id || index + 1),
+      date: normalized.date ? String(normalized.date) : undefined,
       type: String(normalized.type || 'Inbound'),
       agent: String(normalized.agent || 'Sin agente'),
       queue: String(normalized.queue || 'General'),
