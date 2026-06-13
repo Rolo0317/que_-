@@ -185,7 +185,10 @@ export function DataManager({ datasets, activeId, onActivate, onDelete, onUpload
                   </div>
                   <div className="rounded-lg bg-slate-50 p-2 dark:bg-white/5">
                     <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400 dark:text-white/30">Cargado</p>
-                    <p className="mt-0.5 text-sm font-bold text-ink dark:text-white">
+                    <p className="mt-0.5 text-xs font-bold text-ink dark:text-white leading-tight">
+                      {dataset.loadedAt.toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </p>
+                    <p className="text-[10px] text-slate-400 dark:text-white/30 tabular-nums">
                       {dataset.loadedAt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>

@@ -117,7 +117,10 @@ function AgentDetailPanel({ stats, onClose }: { stats: AgentStats; onClose: () =
           </div>
           <div>
             <p className="text-base font-bold text-ink dark:text-white">{stats.agent}</p>
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${cfg.cls}`}>
+            {stats.documento && (
+              <p className="text-[11px] text-slate-400 dark:text-white/40 tabular-nums">Doc: {stats.documento}</p>
+            )}
+            <span className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${cfg.cls}`}>
               {cfg.label}
             </span>
           </div>
@@ -213,6 +216,9 @@ function AgentCard({ stats, selected, onClick }: {
           {initials(stats.agent)}
         </div>
         <p className="truncate text-sm font-bold text-ink dark:text-white">{stats.agent}</p>
+        {stats.documento && (
+          <p className="truncate text-[10px] text-slate-400 dark:text-white/30 tabular-nums">Doc: {stats.documento}</p>
+        )}
       </div>
 
       {/* Metrics */}
@@ -259,7 +265,13 @@ export function AgentView({ stats }: AgentViewProps) {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    const base = q ? stats.filter((s) => s.agent.toLowerCase().includes(q)) : stats;
+    const base = q
+      ? stats.filter(
+          (s) =>
+            s.agent.toLowerCase().includes(q) ||
+            (s.documento?.toLowerCase().includes(q) ?? false),
+        )
+      : stats;
     return sortStats(base, sortKey, sortAsc);
   }, [stats, search, sortKey, sortAsc]);
 
@@ -299,7 +311,7 @@ export function AgentView({ stats }: AgentViewProps) {
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
           <input
             type="text"
-            placeholder="Buscar agente..."
+            placeholder="Buscar por nombre o documento..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setSelected(null); }}
             className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-9 text-sm text-ink shadow-sm placeholder:text-slate-400 focus:border-que-teal focus:outline-none dark:border-white/10 dark:bg-slate-800 dark:text-white dark:placeholder:text-white/30"

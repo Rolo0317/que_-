@@ -3,6 +3,7 @@ export interface CallRecord {
   date?: string;
   type: 'Inbound' | 'Outbound' | string;
   agent: string;
+  documento?: string;
   queue: string;
   hour: string;
   durationSeconds: number;
@@ -60,6 +61,7 @@ export interface AgentScore {
 
 export interface AgentStats {
   agent: string;
+  documento?: string;
   totalCalls: number;
   avgScore: number;
   avgQaScore: number;

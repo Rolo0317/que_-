@@ -83,6 +83,7 @@ export function agentDetailStats(calls: CallRecord[]): AgentStats[] {
     const m = calculateMetrics(ac);
     return {
       agent,
+      documento: ac.find((c) => c.documento)?.documento,
       totalCalls: ac.length,
       avgScore: m.avgScore,
       avgQaScore: m.avgQaScore,
