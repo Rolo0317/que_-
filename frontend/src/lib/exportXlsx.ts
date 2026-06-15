@@ -1,12 +1,9 @@
 import { calculateMetrics } from './metrics';
+import { formatDuration, formatPct } from './format';
 import type { AgentStats, CallRecord } from '../types/calls';
 
-const fp = (v: number) => `${(v * 100).toFixed(2)}%`;
-const fs = (s: number) => {
-  const m = Math.floor(s / 60);
-  const sec = Math.round(s % 60);
-  return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
-};
+const fp = formatPct;
+const fs = formatDuration;
 
 export interface ExportOptions {
   datasetName: string;

@@ -18,6 +18,7 @@ import { WfmView } from './components/WfmView';
 import { WorldCupSplash } from './components/WorldCupSplash';
 import { QuickGuide } from './components/QuickGuide';
 import { ExportButton } from './components/ExportButton';
+import { LS, SS } from './lib/constants';
 import { MODULES } from './config/modules';
 import { fetchHealth, fetchReport, uploadReport } from './lib/api';
 import { parseExcelFile } from './lib/excel';
@@ -83,16 +84,16 @@ function App() {
   const isArchivos = location.pathname === '/archivos';
 
   // ── Splash — once per browser session (sessionStorage, not localStorage) ─
-  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('wc-splash-shown'));
+  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem(SS.splash));
   function closeSplash() {
-    sessionStorage.setItem('wc-splash-shown', '1');
+    sessionStorage.setItem(SS.splash, '1');
     setShowSplash(false);
   }
 
   // ── Data — persisted in sessionStorage so F5 keeps uploaded files ────────
   const [datasets, setDatasets] = useState<Dataset[]>(() => {
     try {
-      const raw = sessionStorage.getItem('que-datasets');
+      const raw = sessionStorage.getItem(SS.datasets);
       if (raw) {
         const parsed = JSON.parse(raw) as Array<{ id: string; name: string; calls: CallRecord[]; loadedAt: string; source: Dataset['source'] }>;
         const restored = parsed.filter((d) => d.id !== 'demo').map((d) => ({ ...d, loadedAt: new Date(d.loadedAt) }));
@@ -102,19 +103,19 @@ function App() {
     return [DEMO_DATASET];
   });
 
-  const [activeDatasetId, setActiveDatasetId] = useState<string>(() => sessionStorage.getItem('que-active-dataset') ?? 'demo');
+  const [activeDatasetId, setActiveDatasetId] = useState<string>(() => sessionStorage.getItem(SS.activeDataset) ?? 'demo');
   const [compareId, setCompareId]             = useState<string | null>(null);
   const [apiStatus, setApiStatus]             = useState<'checking' | 'online' | 'offline'>('checking');
 
   // ── Theme ────────────────────────────────────────────────────────────────
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('theme-preference') as 'light' | 'dark' | null;
+    const saved = localStorage.getItem(LS.theme) as 'light' | 'dark' | null;
     if (saved) return saved;
     return typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
   useEffect(() => {
-    localStorage.setItem('theme-preference', theme);
+    localStorage.setItem(LS.theme, theme);
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
@@ -145,7 +146,7 @@ function App() {
   const VALID_IDS = new Set<ChartId>(['hourly', 'mix', 'scores', 'slaHour', 'abandonHour', 'queues']);
   const [selectedCharts, setSelectedCharts] = useState<ChartId[]>(() => {
     try {
-      const raw = localStorage.getItem('que-report-charts');
+      const raw = localStorage.getItem(LS.reportCharts);
       if (raw) {
         const parsed = JSON.parse(raw) as ChartId[];
         const valid = parsed.filter((id) => VALID_IDS.has(id));
@@ -155,7 +156,7 @@ function App() {
     return ['hourly', 'mix', 'scores'];
   });
   const [layout, setLayout] = useState<ReportLayout>(() => {
-    const saved = localStorage.getItem('que-report-layout');
+    const saved = localStorage.getItem(LS.reportLayout);
     return saved === '3' ? '3' : '2';
   });
   const [showThresholds, setShowThresholds] = useState(false);
@@ -163,11 +164,11 @@ function App() {
   const [chartTo,   setChartTo]             = useState('');
 
   useEffect(() => {
-    localStorage.setItem('que-report-charts', JSON.stringify(selectedCharts));
+    localStorage.setItem(LS.reportCharts, JSON.stringify(selectedCharts));
   }, [selectedCharts]);
 
   useEffect(() => {
-    localStorage.setItem('que-report-layout', layout);
+    localStorage.setItem(LS.reportLayout, layout);
   }, [layout]);
 
   // ── Derived ──────────────────────────────────────────────────────────────
@@ -249,15 +250,15 @@ function App() {
     const toSave = datasets.filter((d) => d.id !== 'demo');
     try {
       if (toSave.length > 0) {
-        sessionStorage.setItem('que-datasets', JSON.stringify(toSave));
+        sessionStorage.setItem(SS.datasets, JSON.stringify(toSave));
       } else {
-        sessionStorage.removeItem('que-datasets');
+        sessionStorage.removeItem(SS.datasets);
       }
     } catch { /* quota exceeded — ignore */ }
   }, [datasets]);
 
   useEffect(() => {
-    sessionStorage.setItem('que-active-dataset', activeDatasetId);
+    sessionStorage.setItem(SS.activeDataset, activeDatasetId);
   }, [activeDatasetId]);
 
   function addDataset(dataset: Dataset) {

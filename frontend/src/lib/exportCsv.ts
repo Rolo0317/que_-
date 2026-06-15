@@ -1,7 +1,5 @@
+import { formatDuration, formatPct } from './format';
 import type { AgentStats } from '../types/calls';
-
-const fs = (s: number) => `${Math.round(s)}s`;
-const fp = (v: number) => `${(v * 100).toFixed(2)}%`;
 
 export function exportAgentsToCsv(agents: AgentStats[], filename?: string): void {
   const headers = ['Agente', 'Documento', 'Llamadas', 'TMO', 'Satisfaccion', 'QA Score', 'SLA', 'FCR', 'Transferencias', 'Abandono', 'ASA'];
@@ -9,14 +7,14 @@ export function exportAgentsToCsv(agents: AgentStats[], filename?: string): void
     a.agent,
     a.documento ?? '',
     String(a.totalCalls),
-    fs(a.avgDuration),
+    formatDuration(a.avgDuration),
     a.avgScore.toFixed(2),
     a.avgQaScore.toFixed(1),
-    fp(a.slaRate),
-    fp(a.fcrRate),
-    fp(a.transferRate),
-    fp(a.abandonRate),
-    fs(a.avgWait),
+    formatPct(a.slaRate),
+    formatPct(a.fcrRate),
+    formatPct(a.transferRate),
+    formatPct(a.abandonRate),
+    formatDuration(a.avgWait),
   ]);
 
   const csv = [headers, ...rows]

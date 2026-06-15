@@ -1,39 +1,49 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { BarChart3, Filter, Target, X, type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
+import { LS } from '../lib/constants';
 
-const KEY = 'que-guide-dismissed';
+interface Tip {
+  Icon:     LucideIcon;
+  iconCls:  string;
+  title:    string;
+  body:     string;
+}
 
-const TIPS = [
+const TIPS: Tip[] = [
   {
-    icon: '🚦',
-    title: 'Semáforo automático',
-    body: 'Cada tarjeta muestra un punto de color: verde = cumple la meta, amarillo = en riesgo, rojo = fuera de meta.',
+    Icon:    Filter,
+    iconCls: 'text-que-teal',
+    title:   'Semaforo automatico',
+    body:    'Cada tarjeta muestra un punto de color: verde = cumple la meta, amarillo = en riesgo, rojo = fuera de meta.',
   },
   {
-    icon: '🔍',
-    title: 'Filtros',
-    body: 'Usa los selectores de la barra superior para ver datos por campaña, tipo de llamada (Inbound/Outbound) o período.',
+    Icon:    Filter,
+    iconCls: 'text-slate-500 dark:text-white/50',
+    title:   'Filtros',
+    body:    'Usa los selectores de la barra superior para ver datos por campana, tipo de llamada o periodo de tiempo.',
   },
   {
-    icon: '🎯',
-    title: 'Edita las metas',
-    body: 'Haz clic en "Metas" (arriba) para ajustar qué porcentaje es considerado "bien" o "en riesgo" para cada indicador.',
+    Icon:    Target,
+    iconCls: 'text-plus-orange',
+    title:   'Edita las metas',
+    body:    'Haz clic en "Metas" (arriba) para ajustar que porcentaje es considerado "bien" o "en riesgo" para cada indicador.',
   },
   {
-    icon: '📊',
-    title: 'Arma tu informe',
-    body: 'Al final de la página selecciona qué gráficas mostrar y cambia su tipo (barras, líneas, área) con los íconos de cada tarjeta.',
+    Icon:    BarChart3,
+    iconCls: 'text-violet',
+    title:   'Arma tu informe',
+    body:    'Al final de la pagina selecciona que graficas mostrar y cambia su tipo (barras, lineas, area) con los iconos de cada tarjeta.',
   },
 ];
 
 export function QuickGuide() {
   const [dismissed, setDismissed] = useState(
-    () => localStorage.getItem(KEY) === '1',
+    () => localStorage.getItem(LS.guideDismissed) === '1',
   );
 
   function dismiss() {
-    localStorage.setItem(KEY, '1');
+    localStorage.setItem(LS.guideDismissed, '1');
     setDismissed(true);
   }
 
@@ -51,12 +61,12 @@ export function QuickGuide() {
           <div className="mt-4 rounded-xl border border-que-teal/20 bg-que-teal/5 p-4 dark:border-que-teal/10 dark:bg-que-teal/[0.04]">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-xs font-bold uppercase tracking-widest text-que-teal">
-                Guía rápida · ¿primera vez aquí?
+                Guia rapida · primera vez aqui?
               </p>
               <button
                 type="button"
                 onClick={dismiss}
-                aria-label="Cerrar guía"
+                aria-label="Cerrar guia"
                 className="flex h-6 w-6 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-slate-600 dark:text-white/30 dark:hover:bg-white/10"
               >
                 <X size={13} />
@@ -69,9 +79,9 @@ export function QuickGuide() {
                   key={tip.title}
                   className="flex gap-3 rounded-lg border border-slate-100 bg-white p-3 dark:border-white/5 dark:bg-white/[0.03]"
                 >
-                  <span className="flex-shrink-0 text-2xl leading-none" aria-hidden="true">
-                    {tip.icon}
-                  </span>
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-white/10">
+                    <tip.Icon size={16} className={tip.iconCls} aria-hidden="true" />
+                  </div>
                   <div>
                     <p className="text-xs font-bold text-ink dark:text-white">{tip.title}</p>
                     <p className="mt-0.5 text-[11px] leading-relaxed text-slate-400 dark:text-white/40">
@@ -87,7 +97,7 @@ export function QuickGuide() {
               onClick={dismiss}
               className="mt-3 text-[11px] font-semibold text-que-teal/70 transition hover:text-que-teal"
             >
-              Entendido, no mostrar de nuevo →
+              Entendido, no mostrar de nuevo
             </button>
           </div>
         </motion.div>

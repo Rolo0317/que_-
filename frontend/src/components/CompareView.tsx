@@ -16,6 +16,7 @@ import {
 import { useMemo } from 'react';
 import { calculateMetrics, callsByHour } from '../lib/metrics';
 import type { Dataset } from '../types/dataset';
+import { BRAND } from '../lib/constants';
 
 interface CompareViewProps {
   datasetA: Dataset;
@@ -120,11 +121,11 @@ export function CompareView({ datasetA, datasetB, onClose }: CompareViewProps) {
                 <YAxis type="category" dataKey="label" width={80} />
                 <Tooltip formatter={(v) => `${v}%`} />
                 <Legend />
-                <Bar dataKey={datasetA.name} fill="#11AEB3" radius={[0, 4, 4, 0]}>
-                  {kpiBars.map((_, i) => <Cell key={i} fill="#11AEB3" />)}
+                <Bar dataKey={datasetA.name} fill={BRAND.teal} radius={[0, 4, 4, 0]}>
+                  {kpiBars.map((_, i) => <Cell key={i} fill={BRAND.teal} />)}
                 </Bar>
-                <Bar dataKey={datasetB.name} fill="#FF9700" radius={[0, 4, 4, 0]}>
-                  {kpiBars.map((_, i) => <Cell key={i} fill="#FF9700" />)}
+                <Bar dataKey={datasetB.name} fill={BRAND.orange} radius={[0, 4, 4, 0]}>
+                  {kpiBars.map((_, i) => <Cell key={i} fill={BRAND.orange} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -143,8 +144,8 @@ export function CompareView({ datasetA, datasetB, onClose }: CompareViewProps) {
               <YAxis allowDecimals={false} />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey={datasetA.name} stroke="#11AEB3" strokeWidth={2} dot={{ r: 3 }} />
-              <Line type="monotone" dataKey={datasetB.name} stroke="#FF9700" strokeWidth={2} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey={datasetA.name} stroke={BRAND.teal} strokeWidth={2} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey={datasetB.name} stroke={BRAND.orange} strokeWidth={2} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>

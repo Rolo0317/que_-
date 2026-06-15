@@ -1,4 +1,8 @@
-import { RotateCcw, X } from 'lucide-react';
+import {
+  Award, Briefcase, CalendarDays, CheckCircle, Clock,
+  Coffee, PhoneCall, PhoneOff, RotateCcw, Shuffle,
+  TrendingDown, TrendingUp, X,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { ThresholdSet } from '../lib/useThresholds';
 
@@ -73,7 +77,7 @@ function MetricCard({
   warnLabel, warnValue, onWarnChange,
   min = 0, max = 100, step = 1,
 }: {
-  icon: string; title: string; description: string; invert?: boolean; unit?: string;
+  icon: ReactNode; title: string; description: string; invert?: boolean; unit?: string;
   goodLabel: string; goodValue: number; onGoodChange: (v: number) => void;
   warnLabel: string; warnValue: number; onWarnChange: (v: number) => void;
   min?: number; max?: number; step?: number;
@@ -81,7 +85,9 @@ function MetricCard({
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-white/5 dark:bg-white/[0.02]">
       <div className="mb-3 flex items-start gap-2">
-        <span className="flex-shrink-0 text-xl leading-none" aria-hidden="true">{icon}</span>
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-200/60 text-slate-500 dark:bg-white/10 dark:text-white/50" aria-hidden="true">
+          {icon}
+        </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-ink dark:text-white">{title}</p>
           <p className="mt-0.5 text-[11px] text-slate-400 dark:text-white/30">{description}</p>
@@ -130,14 +136,16 @@ function SingleCard({
   icon, title, description, unit = '%',
   label, value, onChange, min = 0, max = 100, step = 1,
 }: {
-  icon: string; title: string; description: string; unit?: string;
+  icon: ReactNode; title: string; description: string; unit?: string;
   label: string; value: number; onChange: (v: number) => void;
   min?: number; max?: number; step?: number;
 }) {
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-white/5 dark:bg-white/[0.02]">
       <div className="mb-3 flex items-start gap-2">
-        <span className="flex-shrink-0 text-xl leading-none" aria-hidden="true">{icon}</span>
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-200/60 text-slate-500 dark:bg-white/10 dark:text-white/50" aria-hidden="true">
+          {icon}
+        </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-ink dark:text-white">{title}</p>
           <p className="mt-0.5 text-[11px] text-slate-400 dark:text-white/30">{description}</p>
@@ -221,7 +229,7 @@ export function ThresholdConfig({ thresholds: t, onUpdate, onReset, onClose }: P
         {/* ── Operaciones ──────────────────────────────────────────────────── */}
         <Section title="Operaciones · ¿qué tan bien respondemos?">
           <MetricCard
-            icon="📞" title="SLA de servicio"
+            icon={<PhoneCall size={16} />} title="SLA de servicio"
             description="% llamadas atendidas dentro del tiempo objetivo"
             goodLabel="Meta ≥" goodValue={pct(t.sla.good)}
             onGoodChange={(v) => onUpdate({ sla: { ...t.sla, good: rat(v) } })}
@@ -229,7 +237,7 @@ export function ThresholdConfig({ thresholds: t, onUpdate, onReset, onClose }: P
             onWarnChange={(v) => onUpdate({ sla: { ...t.sla, warning: rat(v) } })}
           />
           <MetricCard
-            icon="📵" title="Tasa de abandono"
+            icon={<PhoneOff size={16} />} title="Tasa de abandono"
             description="% llamadas que cuelgan sin ser atendidas" invert
             goodLabel="Meta ≤" goodValue={pct(t.abandon.good)}
             onGoodChange={(v) => onUpdate({ abandon: { ...t.abandon, good: rat(v) } })}
@@ -237,7 +245,7 @@ export function ThresholdConfig({ thresholds: t, onUpdate, onReset, onClose }: P
             onWarnChange={(v) => onUpdate({ abandon: { ...t.abandon, warning: rat(v) } })}
           />
           <MetricCard
-            icon="⏱️" title="Tiempo de respuesta (ASA)"
+            icon={<Clock size={16} />} title="Tiempo de respuesta (ASA)"
             description="Segundos promedio antes de que un agente atienda"
             invert unit="s" min={0} max={120} step={5}
             goodLabel="Meta ≤" goodValue={t.asa.good}
@@ -250,7 +258,7 @@ export function ThresholdConfig({ thresholds: t, onUpdate, onReset, onClose }: P
         {/* ── WFM ──────────────────────────────────────────────────────────── */}
         <Section title="WFM · ¿cómo administramos la fuerza laboral?">
           <MetricCard
-            icon="💼" title="Utilización"
+            icon={<Briefcase size={16} />} title="Utilizacion"
             description="% del tiempo que el agente está productivamente ocupado"
             goodLabel="Meta ≥" goodValue={pct(t.utilization.good)}
             onGoodChange={(v) => onUpdate({ utilization: { ...t.utilization, good: rat(v) } })}
@@ -258,7 +266,7 @@ export function ThresholdConfig({ thresholds: t, onUpdate, onReset, onClose }: P
             onWarnChange={(v) => onUpdate({ utilization: { ...t.utilization, warning: rat(v) } })}
           />
           <MetricCard
-            icon="☕" title="Shrinkage"
+            icon={<Coffee size={16} />} title="Shrinkage"
             description="% tiempo fuera de servicio (pausas, capacitaciones, ausencias)" invert
             goodLabel="Meta ≤" goodValue={pct(t.shrinkage.good)}
             onGoodChange={(v) => onUpdate({ shrinkage: { ...t.shrinkage, good: rat(v) } })}
@@ -266,7 +274,7 @@ export function ThresholdConfig({ thresholds: t, onUpdate, onReset, onClose }: P
             onWarnChange={(v) => onUpdate({ shrinkage: { ...t.shrinkage, warning: rat(v) } })}
           />
           <MetricCard
-            icon="📅" title="Adherencia al horario"
+            icon={<CalendarDays size={16} />} title="Adherencia al horario"
             description="% del horario programado que el agente realmente cumplió"
             goodLabel="Meta ≥" goodValue={pct(t.adherence.good)}
             onGoodChange={(v) => onUpdate({ adherence: { ...t.adherence, good: rat(v) } })}
@@ -274,13 +282,13 @@ export function ThresholdConfig({ thresholds: t, onUpdate, onReset, onClose }: P
             onWarnChange={(v) => onUpdate({ adherence: { ...t.adherence, warning: rat(v) } })}
           />
           <SingleCard
-            icon="📉" title="Ocupación mínima"
+            icon={<TrendingDown size={16} />} title="Ocupacion minima"
             description="Mínimo de tiempo que el agente debe estar en llamadas activas"
             label="Mínimo" value={pct(t.occupancyMin)}
             onChange={(v) => onUpdate({ occupancyMin: rat(v) })}
           />
           <SingleCard
-            icon="📈" title="Ocupación máxima"
+            icon={<TrendingUp size={16} />} title="Ocupacion maxima"
             description="Tope de ocupación para evitar sobrecarga del agente"
             label="Máximo" value={pct(t.occupancyMax)}
             onChange={(v) => onUpdate({ occupancyMax: rat(v) })}
@@ -290,7 +298,7 @@ export function ThresholdConfig({ thresholds: t, onUpdate, onReset, onClose }: P
         {/* ── Calidad ──────────────────────────────────────────────────────── */}
         <Section title="Calidad · ¿qué tan bien resolvemos?">
           <MetricCard
-            icon="✅" title="Resolución en 1.ª llamada (FCR)"
+            icon={<CheckCircle size={16} />} title="Resolucion en primera llamada (FCR)"
             description="Casos resueltos sin que el cliente tenga que volver a llamar"
             goodLabel="Meta ≥" goodValue={pct(t.fcr.good)}
             onGoodChange={(v) => onUpdate({ fcr: { ...t.fcr, good: rat(v) } })}
@@ -298,7 +306,7 @@ export function ThresholdConfig({ thresholds: t, onUpdate, onReset, onClose }: P
             onWarnChange={(v) => onUpdate({ fcr: { ...t.fcr, warning: rat(v) } })}
           />
           <MetricCard
-            icon="🔀" title="Tasa de transferencia"
+            icon={<Shuffle size={16} />} title="Tasa de transferencia"
             description="% llamadas redirigidas a otro agente o área" invert
             goodLabel="Meta ≤" goodValue={pct(t.transferRate.good)}
             onGoodChange={(v) => onUpdate({ transferRate: { ...t.transferRate, good: rat(v) } })}
@@ -306,7 +314,7 @@ export function ThresholdConfig({ thresholds: t, onUpdate, onReset, onClose }: P
             onWarnChange={(v) => onUpdate({ transferRate: { ...t.transferRate, warning: rat(v) } })}
           />
           <MetricCard
-            icon="🏆" title="Puntaje de calidad (QA)"
+            icon={<Award size={16} />} title="Puntaje de calidad (QA)"
             description="Calificación promedio obtenida en monitoreos de calidad"
             unit=" pts" min={0} max={100} step={1}
             goodLabel="Meta ≥" goodValue={t.qaScore.good}

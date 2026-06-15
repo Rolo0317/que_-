@@ -20,10 +20,10 @@ const statusCfg: Record<KpiStatus, { dot: string; bar: string; value: string }> 
 };
 
 const statusLabel: Record<KpiStatus, { text: string; cls: string }> = {
-  good:    { text: '✓ Bien',          cls: 'text-emerald-600 dark:text-emerald-400' },
-  warning: { text: '⚠ En riesgo',     cls: 'text-amber-600 dark:text-amber-400' },
-  bad:     { text: '✗ Fuera de meta', cls: 'text-rose-600 dark:text-rose-400' },
-  neutral: { text: '',                cls: '' },
+  good:    { text: 'Bien',          cls: 'text-emerald-600 dark:text-emerald-400' },
+  warning: { text: 'En riesgo',     cls: 'text-amber-600 dark:text-amber-400' },
+  bad:     { text: 'Fuera de meta', cls: 'text-rose-600 dark:text-rose-400' },
+  neutral: { text: '',              cls: '' },
 };
 
 export function KpiCard({ label, value, helper, target, status = 'neutral', index = 0, description }: KpiCardProps) {

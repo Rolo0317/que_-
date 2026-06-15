@@ -28,9 +28,10 @@ import {
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { AbandonHourBucket, AgentScore, HourlyBucket, QueueBucket, SlaHourBucket, TypeBucket } from '../types/calls';
+import { BRAND } from '../lib/constants';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const COLORS = ['#11AEB3', '#FF9700', '#08777d', '#ff6f4f', '#6f5dd5', '#10b981'];
+const COLORS = [BRAND.teal, BRAND.orange, '#08777d', '#ff6f4f', '#6f5dd5', '#10b981'];
 const LABEL_STYLE = { fontSize: 10, fontWeight: 600, fill: 'var(--chart-label)' };
 const MARGIN = { top: 20, right: 16, left: 0, bottom: 0 };
 
@@ -144,21 +145,21 @@ export function HourlyChart({ data }: { data: HourlyBucket[] }) {
           {type === 'bar' ? (
             <BarChart data={data} margin={MARGIN}>
               {grid}{xAxis}{yAxis}{tooltip}
-              <Bar dataKey="calls" fill="#11AEB3" radius={[6, 6, 0, 0]} name="Llamadas">
+              <Bar dataKey="calls" fill={BRAND.teal} radius={[6, 6, 0, 0]} name="Llamadas">
                 <LabelList dataKey="calls" position="top" style={LABEL_STYLE} />
               </Bar>
             </BarChart>
           ) : type === 'area' ? (
             <AreaChart data={data} margin={MARGIN}>
               {grid}{xAxis}{yAxis}{tooltip}
-              <Area type="monotone" dataKey="calls" stroke="#11AEB3" fill="#11AEB3" fillOpacity={0.15} strokeWidth={2.5} name="Llamadas">
+              <Area type="monotone" dataKey="calls" stroke={BRAND.teal} fill={BRAND.teal} fillOpacity={0.15} strokeWidth={2.5} name="Llamadas">
                 <LabelList dataKey="calls" position="top" style={LABEL_STYLE} />
               </Area>
             </AreaChart>
           ) : (
             <LineChart data={data} margin={MARGIN}>
               {grid}{xAxis}{yAxis}{tooltip}
-              <Line type="monotone" dataKey="calls" stroke="#11AEB3" strokeWidth={3} dot={{ r: 4, fill: '#11AEB3' }} name="Llamadas">
+              <Line type="monotone" dataKey="calls" stroke={BRAND.teal} strokeWidth={3} dot={{ r: 4, fill: '#11AEB3' }} name="Llamadas">
                 <LabelList dataKey="calls" position="top" style={LABEL_STYLE} />
               </Line>
             </LineChart>
@@ -221,7 +222,7 @@ export function AgentScoreChart({ data }: { data: AgentScore[] }) {
               <XAxis dataKey="agent" tick={{ fontSize: 9 }} interval={0} angle={-30} textAnchor="end" height={48} />
               <YAxis domain={[0, 5]} tick={{ fontSize: 11 }} />
               <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v) => [n(v).toFixed(2), 'Score'] as [string, string]} />
-              <Bar dataKey="score" fill="#FF9700" radius={[6, 6, 0, 0]} name="Score">
+              <Bar dataKey="score" fill={BRAND.orange} radius={[6, 6, 0, 0]} name="Score">
                 <LabelList dataKey="score" position="top" formatter={(v: unknown) => n(v).toFixed(2)} style={LABEL_STYLE} />
               </Bar>
             </BarChart>
@@ -231,7 +232,7 @@ export function AgentScoreChart({ data }: { data: AgentScore[] }) {
               <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 10 }} />
               <YAxis type="category" dataKey="agent" tick={{ fontSize: 10 }} width={74} />
               <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v) => [n(v).toFixed(2), 'Score'] as [string, string]} />
-              <Bar dataKey="score" fill="#FF9700" radius={[0, 6, 6, 0]} name="Score">
+              <Bar dataKey="score" fill={BRAND.orange} radius={[0, 6, 6, 0]} name="Score">
                 <LabelList dataKey="score" position="right" formatter={(v: unknown) => n(v).toFixed(2)} style={LABEL_STYLE} />
               </Bar>
             </BarChart>
@@ -259,17 +260,17 @@ export function SlaHourChart({ data }: { data: SlaHourBucket[] }) {
           {type === 'bar' ? (
             <BarChart data={data} margin={MARGIN}>
               {grid}{xAxis}{yAxis}{tooltip}{refLine}
-              <Bar dataKey="sla" fill="#11AEB3" radius={[6, 6, 0, 0]} name="SLA">{label}</Bar>
+              <Bar dataKey="sla" fill={BRAND.teal} radius={[6, 6, 0, 0]} name="SLA">{label}</Bar>
             </BarChart>
           ) : type === 'area' ? (
             <AreaChart data={data} margin={MARGIN}>
               {grid}{xAxis}{yAxis}{tooltip}{refLine}
-              <Area type="monotone" dataKey="sla" stroke="#11AEB3" fill="#11AEB3" fillOpacity={0.15} strokeWidth={2.5} name="SLA">{label}</Area>
+              <Area type="monotone" dataKey="sla" stroke={BRAND.teal} fill={BRAND.teal} fillOpacity={0.15} strokeWidth={2.5} name="SLA">{label}</Area>
             </AreaChart>
           ) : (
             <LineChart data={data} margin={MARGIN}>
               {grid}{xAxis}{yAxis}{tooltip}{refLine}
-              <Line type="monotone" dataKey="sla" stroke="#11AEB3" strokeWidth={3} dot={{ r: 4, fill: '#11AEB3' }} name="SLA">{label}</Line>
+              <Line type="monotone" dataKey="sla" stroke={BRAND.teal} strokeWidth={3} dot={{ r: 4, fill: '#11AEB3' }} name="SLA">{label}</Line>
             </LineChart>
           )}
         </ResponsiveContainer>
@@ -285,7 +286,7 @@ export function AbandonHourChart({ data }: { data: AbandonHourBucket[] }) {
   const grid    = <CartesianGrid strokeDasharray="3 3" stroke="#dbe4ee" />;
   const xAxis   = <XAxis dataKey="hour" tick={{ fontSize: 11 }} />;
   const yAxis   = <YAxis tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11 }} />;
-  const refLine = <ReferenceLine y={5} stroke="#FF9700" strokeDasharray="6 3" label={{ value: 'Meta 5%', fill: '#FF9700', fontSize: 10, fontWeight: 600, position: 'insideTopRight' }} />;
+  const refLine = <ReferenceLine y={5} stroke={BRAND.orange} strokeDasharray="6 3" label={{ value: 'Meta 5%', fill: '#FF9700', fontSize: 10, fontWeight: 600, position: 'insideTopRight' }} />;
   const label   = <LabelList dataKey="abandonRate" position="top" formatter={(v: unknown) => `${n(v).toFixed(1)}%`} style={LABEL_STYLE} />;
 
   return (

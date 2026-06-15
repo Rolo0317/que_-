@@ -3,15 +3,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useMemo, useState } from 'react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 import { exportAgentsToCsv } from '../lib/exportCsv';
+import { formatDuration, formatPct } from '../lib/format';
+import { BRAND } from '../lib/constants';
 import type { AgentStats, CallRecord } from '../types/calls';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-const fp = (v: number) => `${(v * 100).toFixed(1)}%`;
-const fs = (s: number) => {
-  const m = Math.floor(s / 60);
-  const sec = Math.round(s % 60);
-  return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
-};
+const fp = (v: number) => formatPct(v, 1);
+const fs = formatDuration;
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -134,14 +131,14 @@ function Sparkline({ data, gradPrefix, height = 40 }: {
       <AreaChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
         <defs>
           <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%"  stopColor="#11AEB3" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#11AEB3" stopOpacity={0} />
+            <stop offset="5%"  stopColor={BRAND.teal} stopOpacity={0.3} />
+            <stop offset="95%" stopColor={BRAND.teal} stopOpacity={0} />
           </linearGradient>
         </defs>
         <Area
           type="monotone"
           dataKey="score"
-          stroke="#11AEB3"
+          stroke={BRAND.teal}
           strokeWidth={1.5}
           fill={`url(#${gid})`}
           dot={false}
@@ -185,10 +182,23 @@ function MetaBar({ label, value, max, goal, format, invert = false }: {
 }
 
 // ─── Rank badge ───────────────────────────────────────────────────────────────
+const RANK_STYLES = [
+  'bg-yellow-400 text-yellow-900',
+  'bg-slate-300  text-slate-700',
+  'bg-amber-600  text-white',
+];
+
 function RankBadge({ rank }: { rank: number }) {
-  if (rank === 1) return <span className="text-base leading-none" aria-label="1er lugar">🥇</span>;
-  if (rank === 2) return <span className="text-base leading-none" aria-label="2do lugar">🥈</span>;
-  if (rank === 3) return <span className="text-base leading-none" aria-label="3er lugar">🥉</span>;
+  if (rank <= 3) {
+    return (
+      <span
+        className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black ${RANK_STYLES[rank - 1]}`}
+        aria-label={`Posicion ${rank}`}
+      >
+        {rank}
+      </span>
+    );
+  }
   return (
     <span className="min-w-[22px] text-center text-[10px] font-bold text-slate-400 tabular-nums dark:text-white/30">
       #{rank}
