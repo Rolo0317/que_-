@@ -58,9 +58,6 @@ const DEMO_DATASET: Dataset = {
   source: 'demo',
 };
 
-function splashKey() {
-  return `wc-splash-shown-${new Date().toISOString().slice(0, 10)}`;
-}
 
 // ─── Period filter ────────────────────────────────────────────────────────────
 function filterByPeriod(calls: CallRecord[], period: Period, value: string): CallRecord[] {
@@ -84,16 +81,27 @@ function App() {
   const isAgentes  = location.pathname === '/agentes';
   const isArchivos = location.pathname === '/archivos';
 
-  // ── Splash ───────────────────────────────────────────────────────────────
-  const [showSplash, setShowSplash] = useState(() => !localStorage.getItem(splashKey()));
+  // ── Splash — once per browser session (sessionStorage, not localStorage) ─
+  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('wc-splash-shown'));
   function closeSplash() {
-    localStorage.setItem(splashKey(), '1');
+    sessionStorage.setItem('wc-splash-shown', '1');
     setShowSplash(false);
   }
 
-  // ── Data ─────────────────────────────────────────────────────────────────
-  const [datasets, setDatasets]               = useState<Dataset[]>([DEMO_DATASET]);
-  const [activeDatasetId, setActiveDatasetId] = useState<string>('demo');
+  // ── Data — persisted in sessionStorage so F5 keeps uploaded files ────────
+  const [datasets, setDatasets] = useState<Dataset[]>(() => {
+    try {
+      const raw = sessionStorage.getItem('que-datasets');
+      if (raw) {
+        const parsed = JSON.parse(raw) as Array<{ id: string; name: string; calls: CallRecord[]; loadedAt: string; source: Dataset['source'] }>;
+        const restored = parsed.filter((d) => d.id !== 'demo').map((d) => ({ ...d, loadedAt: new Date(d.loadedAt) }));
+        if (restored.length) return [DEMO_DATASET, ...restored];
+      }
+    } catch {}
+    return [DEMO_DATASET];
+  });
+
+  const [activeDatasetId, setActiveDatasetId] = useState<string>(() => sessionStorage.getItem('que-active-dataset') ?? 'demo');
   const [compareId, setCompareId]             = useState<string | null>(null);
   const [apiStatus, setApiStatus]             = useState<'checking' | 'online' | 'offline'>('checking');
 
@@ -170,6 +178,22 @@ function App() {
       .catch(() => { if (mounted) setApiStatus('offline'); });
     return () => { mounted = false; };
   }, []);
+
+  // Persist uploaded datasets across F5 refreshes
+  useEffect(() => {
+    const toSave = datasets.filter((d) => d.id !== 'demo');
+    try {
+      if (toSave.length > 0) {
+        sessionStorage.setItem('que-datasets', JSON.stringify(toSave));
+      } else {
+        sessionStorage.removeItem('que-datasets');
+      }
+    } catch { /* quota exceeded — ignore */ }
+  }, [datasets]);
+
+  useEffect(() => {
+    sessionStorage.setItem('que-active-dataset', activeDatasetId);
+  }, [activeDatasetId]);
 
   function addDataset(dataset: Dataset) {
     setDatasets((p) => [...p, dataset]);
