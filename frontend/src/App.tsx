@@ -16,6 +16,7 @@ import { ThresholdConfig } from './components/ThresholdConfig';
 import { ToastContainer } from './components/ToastContainer';
 import { WfmView } from './components/WfmView';
 import { WorldCupSplash } from './components/WorldCupSplash';
+import { QuickGuide } from './components/QuickGuide';
 import { MODULES } from './config/modules';
 import { fetchHealth, fetchReport, uploadReport } from './lib/api';
 import { parseExcelFile } from './lib/excel';
@@ -514,6 +515,9 @@ function App() {
               <span className="text-xs text-slate-400 dark:text-white/30">{visibleCalls.length} registros</span>
             </div>
           )}
+
+          {/* ── Quick guide — shown once when data is loaded ── */}
+          {activeCalls.length > 0 && !isArchivos && <QuickGuide />}
 
           {/* ── No-data onboarding banner ── */}
           {activeCalls.length === 0 && !isArchivos && (

@@ -6,7 +6,10 @@ import type { CallRecord } from '../../types/calls';
 
 const fmt = (v: number) => `${(v * 100).toFixed(2)}%`;
 
-type Kpi = { label: string; value: string | number; helper: string; target?: string; status: KpiStatus };
+type Kpi = {
+  label: string; value: string | number; helper: string;
+  target?: string; status: KpiStatus; description?: string;
+};
 
 function pct(v: number, g: number, w: number): KpiStatus {
   return v >= g ? 'good' : v >= w ? 'warning' : 'bad';
@@ -25,39 +28,49 @@ export function useWfmMetrics(calls: CallRecord[], thresholds: ThresholdSet) {
     const t = thresholds;
     return [
       {
-        label: 'Ocupacion',
+        label: 'Ocupación',
         value: fmt(metrics.occupancy),
-        helper: 'Talk / disponible',
+        helper: 'Tiempo en llamadas',
         target: `Meta: ${(t.occupancyMin * 100).toFixed(0)}–${(t.occupancyMax * 100).toFixed(0)}%`,
         status: occupancy(metrics.occupancy, t.occupancyMin, t.occupancyMax),
+        description:
+          'Porcentaje del tiempo disponible que el agente está atendiendo llamadas activamente. Un rango entre 75–90% es saludable; por encima se genera sobrecarga.',
       },
       {
-        label: 'Utilizacion',
+        label: 'Utilización',
         value: fmt(metrics.utilization),
-        helper: 'Productivo / login',
+        helper: 'Tiempo productivo',
         target: `Meta: >${(t.utilization.good * 100).toFixed(0)}%`,
         status: pct(metrics.utilization, t.utilization.good, t.utilization.warning),
+        description:
+          'Del total de tiempo que el agente estuvo conectado, cuánto fue productivo (llamadas + documentación). Mientras mayor, más eficiente el uso del tiempo pagado.',
       },
       {
-        label: 'Shrinkage',
+        label: 'Tiempo improductivo',
         value: fmt(metrics.shrinkage),
-        helper: 'Fuera de produccion',
+        helper: 'Shrinkage',
         target: `Meta: <${(t.shrinkage.good * 100).toFixed(0)}%`,
         status: pctInv(metrics.shrinkage, t.shrinkage.good, t.shrinkage.warning),
+        description:
+          'Shrinkage: porcentaje del tiempo de trabajo que los agentes NO están disponibles (pausas, capacitaciones, ausencias, incapacidades). Mientras menor, mejor.',
       },
       {
         label: 'Adherencia',
         value: fmt(metrics.adherence),
-        helper: 'Horario plan vs real',
+        helper: 'Cumplimiento del horario',
         target: `Meta: >${(t.adherence.good * 100).toFixed(0)}%`,
         status: pct(metrics.adherence, t.adherence.good, t.adherence.warning),
+        description:
+          'Qué tan bien cumple el agente con su horario programado. Un 95% significa que respetó el 95% de su turno — llegó a tiempo, tomó pausas cuando correspondía, etc.',
       },
       {
         label: 'Asistencia',
         value: fmt(metrics.attendance),
-        helper: 'Presencia programada',
+        helper: 'Presencia vs. programado',
         target: `Meta: >${(t.attendance.good * 100).toFixed(0)}%`,
         status: pct(metrics.attendance, t.attendance.good, t.attendance.warning),
+        description:
+          'Porcentaje de agentes que asistieron de los que estaban programados para trabajar ese período. Ausencias no justificadas bajan este indicador.',
       },
     ];
   }, [metrics, thresholds]);
