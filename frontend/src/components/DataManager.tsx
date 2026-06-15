@@ -5,6 +5,7 @@ import {
   Download,
   FileSpreadsheet,
   Info,
+  Power,
   Trash2,
   Upload,
 } from 'lucide-react';
@@ -21,6 +22,7 @@ const SOURCE_COLOR = {
 } as const;
 
 const EXPECTED_COLUMNS = [
+  // Columnas propias
   'tipo / type',
   'agente / agent',
   'cola / queue',
@@ -32,6 +34,17 @@ const EXPECTED_COLUMNS = [
   'fcr / resolvedFirstContact',
   'calificacion / score',
   'calidad / qaScore',
+  // Columnas Vicidial (se aceptan directamente)
+  'uniqueid',
+  'user',
+  'campaign_id',
+  'call_date',
+  'length_in_sec',
+  'queue_seconds',
+  'status',
+  'talk_sec',
+  'pause_sec',
+  'login_sec',
 ];
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -197,9 +210,30 @@ export function DataManager({ datasets, activeId, onActivate, onDelete, onUpload
                 {/* Actions */}
                 <div className="mt-4 flex items-center gap-2">
                   {isActive ? (
-                    <div className="flex-1 rounded-lg border border-que-teal/30 bg-que-teal/5 py-2 text-center text-xs font-semibold text-que-teal">
-                      En uso
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { if (dataset.id !== 'demo') onActivate('demo'); }}
+                      disabled={dataset.id === 'demo'}
+                      title={dataset.id !== 'demo' ? 'Apagar: volver a datos de muestra' : 'Dataset de muestra (siempre disponible)'}
+                      className={`group relative flex-1 overflow-hidden rounded-lg border py-2 text-xs font-semibold transition ${
+                        dataset.id === 'demo'
+                          ? 'cursor-default border-que-teal/30 bg-que-teal/5 text-que-teal'
+                          : 'cursor-pointer border-que-teal/30 bg-que-teal/5 text-que-teal hover:border-rose-300 hover:bg-rose-50 hover:text-rose-500 dark:hover:border-rose-700 dark:hover:bg-rose-950/30 dark:hover:text-rose-400'
+                      }`}
+                    >
+                      {/* Estado normal: En uso */}
+                      <span className={`flex items-center justify-center gap-1.5 transition-opacity duration-150 ${dataset.id !== 'demo' ? 'group-hover:opacity-0' : ''}`}>
+                        <CheckCircle2 size={12} aria-hidden="true" />
+                        En uso
+                      </span>
+                      {/* Estado hover: Apagar */}
+                      {dataset.id !== 'demo' && (
+                        <span className="absolute inset-0 flex items-center justify-center gap-1.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                          <Power size={12} aria-hidden="true" />
+                          Apagar
+                        </span>
+                      )}
+                    </button>
                   ) : (
                     <button
                       type="button"
@@ -277,18 +311,30 @@ export function DataManager({ datasets, activeId, onActivate, onDelete, onUpload
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="mx-auto mt-4 flex max-w-lg flex-wrap justify-center gap-1.5">
-                {EXPECTED_COLUMNS.map((col) => (
-                  <span
-                    key={col}
-                    className="rounded-md bg-white px-2 py-1 font-mono text-[10px] text-slate-600 shadow-sm dark:bg-white/10 dark:text-white/50"
-                  >
-                    {col}
-                  </span>
-                ))}
+              <div className="mx-auto mt-4 max-w-lg space-y-3 text-left">
+                <div>
+                  <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-white/30">Columnas propias</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {EXPECTED_COLUMNS.slice(0, 11).map((col) => (
+                      <span key={col} className="rounded-md bg-white px-2 py-1 font-mono text-[10px] text-slate-600 shadow-sm dark:bg-white/10 dark:text-white/50">
+                        {col}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-[#11AEB3]/70">Columnas Vicidial (export directo)</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {EXPECTED_COLUMNS.slice(11).map((col) => (
+                      <span key={col} className="rounded-md border border-[#11AEB3]/20 bg-[#11AEB3]/5 px-2 py-1 font-mono text-[10px] text-[#11AEB3] shadow-sm">
+                        {col}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
               <p className="mt-3 text-[11px] text-slate-400 dark:text-white/25">
-                Los encabezados pueden estar en español o inglés. Las columnas sin coincidencia se ignoran.
+                Encabezados en español, inglés o formato Vicidial. Las columnas sin coincidencia se ignoran.
               </p>
             </motion.div>
           )}

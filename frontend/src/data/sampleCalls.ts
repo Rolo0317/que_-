@@ -1,63 +1,274 @@
 import type { CallRecord } from '../types/calls';
 
-// 48 registros · 6 agentes · 3 meses (abril–junio 2026) · múltiples colas
-// Documentos: Ana Ruiz=1045678923 · Luis Mora=1023456789 · Mia Cano=1067890123
-//             Nico Paz=1034567890 · Sara Gil=1056789012  · Pedro Alba=1012345678
-export const sampleCalls: CallRecord[] = [
-  // ── Abril ──────────────────────────────────────────────────────────────────
-  { id: 1,  date: '2026-04-03', type: 'Inbound',  agent: 'Ana Ruiz',   documento: '1045678923', queue: 'Soporte',   hour: '08:00', durationSeconds: 312, waitSeconds: 18, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.7, qaScore: 96, scheduledSeconds: 28800, loginSeconds: 27600, productiveSeconds: 23100, availableSeconds: 4200, shrinkageSeconds: 2100, adherenceSeconds: 26700, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 2,  date: '2026-04-03', type: 'Outbound', agent: 'Luis Mora',  documento: '1023456789', queue: 'Ventas',    hour: '09:00', durationSeconds: 244, waitSeconds: 12, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.3, qaScore: 91, scheduledSeconds: 28800, loginSeconds: 27000, productiveSeconds: 21800, availableSeconds: 5100, shrinkageSeconds: 2600, adherenceSeconds: 25800, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 3,  date: '2026-04-03', type: 'Inbound',  agent: 'Mia Cano',   documento: '1067890123', queue: 'Soporte',   hour: '10:00', durationSeconds: 186, waitSeconds: 46, abandoned: true,  answeredWithinSla: false, resolvedFirstContact: false, transferred: true,  score: 3.9, qaScore: 84, scheduledSeconds: 28800, loginSeconds: 25200, productiveSeconds: 19000, availableSeconds: 6200, shrinkageSeconds: 3400, adherenceSeconds: 23900, scheduled: true, staffed: true,  attendanceStatus: 'Tarde' },
-  { id: 4,  date: '2026-04-03', type: 'Inbound',  agent: 'Ana Ruiz',   documento: '1045678923', queue: 'Retencion', hour: '11:00', durationSeconds: 428, waitSeconds: 22, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.8, qaScore: 97, scheduledSeconds: 28800, loginSeconds: 27900, productiveSeconds: 23800, availableSeconds: 3600, shrinkageSeconds: 1900, adherenceSeconds: 27100, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 5,  date: '2026-04-03', type: 'Outbound', agent: 'Nico Paz',   documento: '1034567890', queue: 'Encuestas', hour: '12:00', durationSeconds: 221, waitSeconds: 9,  abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.1, qaScore: 88, scheduledSeconds: 28800, loginSeconds: 26500, productiveSeconds: 21000, availableSeconds: 5400, shrinkageSeconds: 3000, adherenceSeconds: 25100, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 6,  date: '2026-04-03', type: 'Inbound',  agent: 'Sara Gil',   documento: '1056789012', queue: 'Soporte',   hour: '13:00', durationSeconds: 354, waitSeconds: 26, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.5, qaScore: 93, scheduledSeconds: 28800, loginSeconds: 27200, productiveSeconds: 22600, availableSeconds: 4500, shrinkageSeconds: 2400, adherenceSeconds: 26000, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 7,  date: '2026-04-03', type: 'Outbound', agent: 'Pedro Alba', documento: '1012345678', queue: 'Ventas',    hour: '14:00', durationSeconds: 288, waitSeconds: 37, abandoned: true,  answeredWithinSla: false, resolvedFirstContact: false, transferred: true,  score: 3.8, qaScore: 82, scheduledSeconds: 28800, loginSeconds: 24600, productiveSeconds: 18400, availableSeconds: 6100, shrinkageSeconds: 4200, adherenceSeconds: 23100, scheduled: true, staffed: true,  attendanceStatus: 'Tarde' },
-  { id: 8,  date: '2026-04-03', type: 'Inbound',  agent: 'Ana Ruiz',   documento: '1045678923', queue: 'Retencion', hour: '15:00', durationSeconds: 391, waitSeconds: 16, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.9, qaScore: 98, scheduledSeconds: 28800, loginSeconds: 28100, productiveSeconds: 24200, availableSeconds: 3300, shrinkageSeconds: 1700, adherenceSeconds: 27400, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
+// ─── Dataset Vicidial simulado · 125 agentes · ABR–JUN 2026 · ~6 200 registros ─
+//
+// Mapeo Vicidial → CallRecord:
+//   vicidial_log.uniqueid        → id  (VID-XXXXXX)
+//   vicidial_log.user            → agent  (login Vicidial)
+//   vicidial_log.campaign_id     → queue
+//   vicidial_log.call_date       → date + hour
+//   vicidial_log.length_in_sec   → durationSeconds
+//   vicidial_log.queue_seconds   → waitSeconds
+//   vicidial_log.status (A/AB/CLOSER/SALE/NI/N/B) → abandoned/answeredWithinSla/transferred
+//   vicidial_agent_log.talk_sec + dispo_sec → parte de productiveSeconds
+//   vicidial_agent_log.pause_sec (BREAK/LUNCH/TRAIN/MEET) → shrinkageSeconds
+//   vicidial_agent_log.login_sec → loginSeconds
+//   vicidial_agent_log.wait_sec  → availableSeconds
 
-  { id: 9,  date: '2026-04-10', type: 'Inbound',  agent: 'Luis Mora',  documento: '1023456789', queue: 'Soporte',   hour: '08:00', durationSeconds: 275, waitSeconds: 31, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: false, transferred: true,  score: 4.0, qaScore: 86, scheduledSeconds: 28800, loginSeconds: 26800, productiveSeconds: 21200, availableSeconds: 5500, shrinkageSeconds: 2900, adherenceSeconds: 25500, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 10, date: '2026-04-10', type: 'Inbound',  agent: 'Mia Cano',   documento: '1067890123', queue: 'Soporte',   hour: '09:00', durationSeconds: 340, waitSeconds: 20, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.4, qaScore: 90, scheduledSeconds: 28800, loginSeconds: 27400, productiveSeconds: 22800, availableSeconds: 4300, shrinkageSeconds: 2200, adherenceSeconds: 26200, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 11, date: '2026-04-10', type: 'Outbound', agent: 'Nico Paz',   documento: '1034567890', queue: 'Encuestas', hour: '10:00', durationSeconds: 198, waitSeconds: 8,  abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.2, qaScore: 89, scheduledSeconds: 28800, loginSeconds: 27100, productiveSeconds: 21500, availableSeconds: 5300, shrinkageSeconds: 2700, adherenceSeconds: 25800, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 12, date: '2026-04-10', type: 'Inbound',  agent: 'Sara Gil',   documento: '1056789012', queue: 'Retencion', hour: '11:00', durationSeconds: 450, waitSeconds: 15, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.6, qaScore: 95, scheduledSeconds: 28800, loginSeconds: 28000, productiveSeconds: 24000, availableSeconds: 3700, shrinkageSeconds: 1800, adherenceSeconds: 27200, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 13, date: '2026-04-10', type: 'Inbound',  agent: 'Pedro Alba', documento: '1012345678', queue: 'Soporte',   hour: '12:00', durationSeconds: 229, waitSeconds: 55, abandoned: true,  answeredWithinSla: false, resolvedFirstContact: false, transferred: false, score: 3.5, qaScore: 78, scheduledSeconds: 28800, loginSeconds: 24000, productiveSeconds: 17800, availableSeconds: 6200, shrinkageSeconds: 4800, adherenceSeconds: 22500, scheduled: true, staffed: true,  attendanceStatus: 'Tarde' },
-  { id: 14, date: '2026-04-10', type: 'Outbound', agent: 'Ana Ruiz',   documento: '1045678923', queue: 'Ventas',    hour: '13:00', durationSeconds: 305, waitSeconds: 14, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.8, qaScore: 97, scheduledSeconds: 28800, loginSeconds: 28200, productiveSeconds: 24100, availableSeconds: 3400, shrinkageSeconds: 1600, adherenceSeconds: 27600, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 15, date: '2026-04-10', type: 'Inbound',  agent: 'Luis Mora',  documento: '1023456789', queue: 'Retencion', hour: '14:00', durationSeconds: 416, waitSeconds: 42, abandoned: false, answeredWithinSla: false, resolvedFirstContact: true,  transferred: false, score: 4.1, qaScore: 87, scheduledSeconds: 28800, loginSeconds: 26600, productiveSeconds: 21100, availableSeconds: 5400, shrinkageSeconds: 3100, adherenceSeconds: 25200, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 16, date: '2026-04-10', type: 'Inbound',  agent: 'Mia Cano',   documento: '1067890123', queue: 'Soporte',   hour: '15:00', durationSeconds: 267, waitSeconds: 28, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: false, transferred: true,  score: 4.0, qaScore: 85, scheduledSeconds: 28800, loginSeconds: 25800, productiveSeconds: 20200, availableSeconds: 5600, shrinkageSeconds: 3200, adherenceSeconds: 24400, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
+// ─── 125 Agentes (user Vicidial · cédula colombiana) ────────────────────────
+const AGENTS = [
+  // ── Equipo SOPORTE_IN (30 agentes) ────────────────────────────────────────
+  { login: 'jrodriguez',   doc: '1020456789' },
+  { login: 'mlopez',       doc: '1023567890' },
+  { login: 'cgarcia',      doc: '1015678901' },
+  { login: 'amoreno',      doc: '1018789012' },
+  { login: 'dperez',       doc: '1022890123' },
+  { login: 'lmartinez',    doc: '1019901234' },
+  { login: 'fgomez',       doc: '1021012345' },
+  { login: 'pherrera',     doc: '1024123456' },
+  { login: 'sjimenez',     doc: '1016234567' },
+  { login: 'vtorres',      doc: '1017345678' },
+  { login: 'jvargas',      doc: '1025456789' },
+  { login: 'mcastro',      doc: '1026567890' },
+  { login: 'cortiz',       doc: '1027678901' },
+  { login: 'aramos',       doc: '1028789012' },
+  { login: 'dmendoza',     doc: '1029890123' },
+  { login: 'lcruz',        doc: '1030901234' },
+  { login: 'freyes',       doc: '1031012345' },
+  { login: 'psuarez',      doc: '1032123456' },
+  { login: 'aflores',      doc: '1033234567' },
+  { login: 'mguerrero',    doc: '1034345678' },
+  { login: 'jruiz',        doc: '1035456789' },
+  { login: 'drojas',       doc: '1036567890' },
+  { login: 'rdiaz',        doc: '1037678901' },
+  { login: 'jmolina',      doc: '1038789012' },
+  { login: 'kchavez',      doc: '1039890123' },
+  { login: 'oramirez',     doc: '1040901234' },
+  { login: 'nsilva',       doc: '1041012345' },
+  { login: 'emedina',      doc: '1042123456' },
+  { login: 'csalazar',     doc: '1043234567' },
+  { login: 'jaguilar',     doc: '1044345678' },
+  // ── Equipo VENTAS_IN / VENTAS_OUT (40 agentes) ────────────────────────────
+  { login: 'spena',        doc: '1045456789' },
+  { login: 'vmunoz',       doc: '1046567890' },
+  { login: 'farias',       doc: '1047678901' },
+  { login: 'kpinto',       doc: '1048789012' },
+  { login: 'jacosta',      doc: '1049890123' },
+  { login: 'gbernal',      doc: '1050901234' },
+  { login: 'acardona',     doc: '1051012345' },
+  { login: 'mvega',        doc: '1052123456' },
+  { login: 'csanchez',     doc: '1053234567' },
+  { login: 'darroyo',      doc: '1054345678' },
+  { login: 'jospina',      doc: '1055456789' },
+  { login: 'mquintero',    doc: '1056567890' },
+  { login: 'lpalomino',    doc: '1057678901' },
+  { login: 'hlozano',      doc: '1058789012' },
+  { login: 'mpatino',      doc: '1059890123' },
+  { login: 'rnieto',       doc: '1060901234' },
+  { login: 'abonilla',     doc: '1061012345' },
+  { login: 'ymarin',       doc: '1062123456' },
+  { login: 'pcastano',     doc: '1063234567' },
+  { login: 'lvergara',     doc: '1064345678' },
+  { login: 'jleon',        doc: '1065456789' },
+  { login: 'csoto',        doc: '1066567890' },
+  { login: 'afuentes',     doc: '1067678901' },
+  { login: 'erestrepo',    doc: '1068789012' },
+  { login: 'mbotero',      doc: '1069890123' },
+  { login: 'jvalencia',    doc: '1070901234' },
+  { login: 'cgiraldo',     doc: '1071012345' },
+  { login: 'macevedo',     doc: '1072123456' },
+  { login: 'hzapata',      doc: '1073234567' },
+  { login: 'jcamacho',     doc: '1074345678' },
+  { login: 'moviedo',      doc: '1075456789' },
+  { login: 'lcaballero',   doc: '1076567890' },
+  { login: 'drobles',      doc: '1077678901' },
+  { login: 'fhenriquez',   doc: '1078789012' },
+  { login: 'amillan',      doc: '1079890123' },
+  { login: 'jmendez',      doc: '1080901234' },
+  { login: 'rguerrero',    doc: '1081012345' },
+  { login: 'djara',        doc: '1082123456' },
+  { login: 'npaez',        doc: '1083234567' },
+  { login: 'ivelez',       doc: '1084345678' },
+  // ── Equipo COBROS_IN / COBROS_OUT (30 agentes) ────────────────────────────
+  { login: 'jcontreras',   doc: '1085456789' },
+  { login: 'acontreras',   doc: '1086567890' },
+  { login: 'pcorrea',      doc: '1087678901' },
+  { login: 'gcarrillo',    doc: '1088789012' },
+  { login: 'lceballos',    doc: '1089890123' },
+  { login: 'rcaicedo',     doc: '1090901234' },
+  { login: 'fcabrera',     doc: '1091012345' },
+  { login: 'acamargo',     doc: '1092123456' },
+  { login: 'zcardenas',    doc: '1093234567' },
+  { login: 'lcarrero',     doc: '1094345678' },
+  { login: 'mcelis',       doc: '1095456789' },
+  { login: 'jcerda',       doc: '1096567890' },
+  { login: 'dcifuentes',   doc: '1097678901' },
+  { login: 'acobos',       doc: '1098789012' },
+  { login: 'gcordoba',     doc: '1099890123' },
+  { login: 'hcortez',      doc: '1100901234' },
+  { login: 'jcrespillo',   doc: '1101012345' },
+  { login: 'ldaza',        doc: '1102123456' },
+  { login: 'jdelgado',     doc: '1103234567' },
+  { login: 'mdelgado',     doc: '1104345678' },
+  { login: 'adurango',     doc: '1105456789' },
+  { login: 'lespinoza',    doc: '1106567890' },
+  { login: 'gesterling',   doc: '1107678901' },
+  { login: 'nfajardo',     doc: '1108789012' },
+  { login: 'jfernandez',   doc: '1109890123' },
+  { login: 'gferrer',      doc: '1110901234' },
+  { login: 'efigueroa',    doc: '1111012345' },
+  { login: 'mflorez',      doc: '1112123456' },
+  { login: 'jfranco',      doc: '1113234567' },
+  { login: 'afguerrero',   doc: '1114345678' },
+  // ── Equipo QA / CALIDAD / ENCUESTAS (25 agentes) ─────────────────────────
+  { login: 'agomez',       doc: '1115456789' },
+  { login: 'lgomez',       doc: '1116567890' },
+  { login: 'mgomez',       doc: '1117678901' },
+  { login: 'pgomez',       doc: '1118789012' },
+  { login: 'sgomez',       doc: '1119890123' },
+  { login: 'vgonzalez',    doc: '1120901234' },
+  { login: 'rgonzalez',    doc: '1121012345' },
+  { login: 'pgonzalez',    doc: '1122123456' },
+  { login: 'ngonzalez',    doc: '1123234567' },
+  { login: 'jguerra',      doc: '1124345678' },
+  { login: 'mguerra',      doc: '1125456789' },
+  { login: 'aguerra',      doc: '1126567890' },
+  { login: 'lguerrero',    doc: '1127678901' },
+  { login: 'mguevara',     doc: '1128789012' },
+  { login: 'iguevara',     doc: '1129890123' },
+  { login: 'jgutierrez',   doc: '1130901234' },
+  { login: 'mgutierrez',   doc: '1131012345' },
+  { login: 'agutierrez',   doc: '1132123456' },
+  { login: 'mhernandez',   doc: '1133234567' },
+  { login: 'ahernandez',   doc: '1134345678' },
+  { login: 'jhernandez',   doc: '1135456789' },
+  { login: 'nhidalgo',     doc: '1136567890' },
+  { login: 'lhidalgo',     doc: '1137678901' },
+  { login: 'dholguin',     doc: '1138789012' },
+  { login: 'nholguin',     doc: '1139890123' },
+] as const;
 
-  // ── Mayo ───────────────────────────────────────────────────────────────────
-  { id: 17, date: '2026-05-05', type: 'Inbound',  agent: 'Ana Ruiz',   documento: '1045678923', queue: 'Soporte',   hour: '08:00', durationSeconds: 338, waitSeconds: 19, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.9, qaScore: 99, scheduledSeconds: 28800, loginSeconds: 28300, productiveSeconds: 24400, availableSeconds: 3200, shrinkageSeconds: 1500, adherenceSeconds: 27800, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 18, date: '2026-05-05', type: 'Outbound', agent: 'Pedro Alba', documento: '1012345678', queue: 'Ventas',    hour: '09:00', durationSeconds: 193, waitSeconds: 62, abandoned: true,  answeredWithinSla: false, resolvedFirstContact: false, transferred: true,  score: 3.4, qaScore: 75, scheduledSeconds: 28800, loginSeconds: 23500, productiveSeconds: 17000, availableSeconds: 6500, shrinkageSeconds: 5200, adherenceSeconds: 21900, scheduled: true, staffed: true,  attendanceStatus: 'Tarde' },
-  { id: 19, date: '2026-05-05', type: 'Inbound',  agent: 'Sara Gil',   documento: '1056789012', queue: 'Soporte',   hour: '10:00', durationSeconds: 381, waitSeconds: 23, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.6, qaScore: 94, scheduledSeconds: 28800, loginSeconds: 27500, productiveSeconds: 23000, availableSeconds: 4200, shrinkageSeconds: 2100, adherenceSeconds: 26300, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 20, date: '2026-05-05', type: 'Inbound',  agent: 'Nico Paz',   documento: '1034567890', queue: 'Retencion', hour: '11:00', durationSeconds: 252, waitSeconds: 11, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.3, qaScore: 90, scheduledSeconds: 28800, loginSeconds: 27200, productiveSeconds: 22000, availableSeconds: 4800, shrinkageSeconds: 2600, adherenceSeconds: 25900, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 21, date: '2026-05-05', type: 'Outbound', agent: 'Luis Mora',  documento: '1023456789', queue: 'Encuestas', hour: '12:00', durationSeconds: 219, waitSeconds: 17, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: false, transferred: true,  score: 3.9, qaScore: 83, scheduledSeconds: 28800, loginSeconds: 26200, productiveSeconds: 20500, availableSeconds: 5700, shrinkageSeconds: 3500, adherenceSeconds: 24700, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 22, date: '2026-05-05', type: 'Inbound',  agent: 'Mia Cano',   documento: '1067890123', queue: 'Soporte',   hour: '13:00', durationSeconds: 305, waitSeconds: 33, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.5, qaScore: 92, scheduledSeconds: 28800, loginSeconds: 27700, productiveSeconds: 23200, availableSeconds: 4000, shrinkageSeconds: 2000, adherenceSeconds: 26500, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 23, date: '2026-05-05', type: 'Inbound',  agent: 'Ana Ruiz',   documento: '1045678923', queue: 'Retencion', hour: '14:00', durationSeconds: 412, waitSeconds: 14, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.8, qaScore: 98, scheduledSeconds: 28800, loginSeconds: 28400, productiveSeconds: 24500, availableSeconds: 3100, shrinkageSeconds: 1400, adherenceSeconds: 27900, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 24, date: '2026-05-05', type: 'Outbound', agent: 'Sara Gil',   documento: '1056789012', queue: 'Ventas',    hour: '15:00', durationSeconds: 277, waitSeconds: 21, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.4, qaScore: 91, scheduledSeconds: 28800, loginSeconds: 27600, productiveSeconds: 22900, availableSeconds: 4400, shrinkageSeconds: 2300, adherenceSeconds: 26200, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-
-  { id: 25, date: '2026-05-20', type: 'Inbound',  agent: 'Pedro Alba', documento: '1012345678', queue: 'Soporte',   hour: '08:00', durationSeconds: 201, waitSeconds: 70, abandoned: true,  answeredWithinSla: false, resolvedFirstContact: false, transferred: false, score: 3.3, qaScore: 72, scheduledSeconds: 28800, loginSeconds: 22800, productiveSeconds: 16500, availableSeconds: 6300, shrinkageSeconds: 5400, adherenceSeconds: 21200, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 26, date: '2026-05-20', type: 'Inbound',  agent: 'Luis Mora',  documento: '1023456789', queue: 'Retencion', hour: '09:00', durationSeconds: 349, waitSeconds: 26, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.2, qaScore: 88, scheduledSeconds: 28800, loginSeconds: 27300, productiveSeconds: 22200, availableSeconds: 4700, shrinkageSeconds: 2500, adherenceSeconds: 26100, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 27, date: '2026-05-20', type: 'Outbound', agent: 'Nico Paz',   documento: '1034567890', queue: 'Encuestas', hour: '10:00', durationSeconds: 183, waitSeconds: 7,  abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.4, qaScore: 92, scheduledSeconds: 28800, loginSeconds: 27900, productiveSeconds: 23300, availableSeconds: 4100, shrinkageSeconds: 2000, adherenceSeconds: 26700, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 28, date: '2026-05-20', type: 'Inbound',  agent: 'Mia Cano',   documento: '1067890123', queue: 'Soporte',   hour: '11:00', durationSeconds: 290, waitSeconds: 39, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: false, transferred: true,  score: 4.0, qaScore: 85, scheduledSeconds: 28800, loginSeconds: 26400, productiveSeconds: 20800, availableSeconds: 5500, shrinkageSeconds: 3100, adherenceSeconds: 25000, scheduled: true, staffed: true,  attendanceStatus: 'Tarde' },
-  { id: 29, date: '2026-05-20', type: 'Inbound',  agent: 'Sara Gil',   documento: '1056789012', queue: 'Retencion', hour: '12:00', durationSeconds: 420, waitSeconds: 18, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.7, qaScore: 96, scheduledSeconds: 28800, loginSeconds: 27800, productiveSeconds: 23400, availableSeconds: 3900, shrinkageSeconds: 1900, adherenceSeconds: 26600, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 30, date: '2026-05-20', type: 'Outbound', agent: 'Ana Ruiz',   documento: '1045678923', queue: 'Ventas',    hour: '13:00', durationSeconds: 268, waitSeconds: 13, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.9, qaScore: 99, scheduledSeconds: 28800, loginSeconds: 28500, productiveSeconds: 24600, availableSeconds: 3000, shrinkageSeconds: 1300, adherenceSeconds: 28000, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 31, date: '2026-05-20', type: 'Inbound',  agent: 'Pedro Alba', documento: '1012345678', queue: 'Soporte',   hour: '14:00', durationSeconds: 315, waitSeconds: 48, abandoned: true,  answeredWithinSla: false, resolvedFirstContact: false, transferred: true,  score: 3.6, qaScore: 79, scheduledSeconds: 28800, loginSeconds: 24300, productiveSeconds: 18100, availableSeconds: 6200, shrinkageSeconds: 4500, adherenceSeconds: 22800, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 32, date: '2026-05-20', type: 'Inbound',  agent: 'Luis Mora',  documento: '1023456789', queue: 'Soporte',   hour: '15:00', durationSeconds: 388, waitSeconds: 29, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.3, qaScore: 90, scheduledSeconds: 28800, loginSeconds: 27400, productiveSeconds: 22600, availableSeconds: 4500, shrinkageSeconds: 2400, adherenceSeconds: 26200, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-
-  // ── Junio ──────────────────────────────────────────────────────────────────
-  { id: 33, date: '2026-06-01', type: 'Inbound',  agent: 'Ana Ruiz',   documento: '1045678923', queue: 'Soporte',   hour: '08:00', durationSeconds: 360, waitSeconds: 17, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.9, qaScore: 99, scheduledSeconds: 28800, loginSeconds: 28600, productiveSeconds: 24700, availableSeconds: 2900, shrinkageSeconds: 1200, adherenceSeconds: 28100, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 34, date: '2026-06-01', type: 'Outbound', agent: 'Luis Mora',  documento: '1023456789', queue: 'Ventas',    hour: '09:00', durationSeconds: 231, waitSeconds: 24, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: false, transferred: true,  score: 4.0, qaScore: 86, scheduledSeconds: 28800, loginSeconds: 26900, productiveSeconds: 21300, availableSeconds: 5300, shrinkageSeconds: 3000, adherenceSeconds: 25600, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 35, date: '2026-06-01', type: 'Inbound',  agent: 'Mia Cano',   documento: '1067890123', queue: 'Retencion', hour: '10:00', durationSeconds: 298, waitSeconds: 35, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.5, qaScore: 93, scheduledSeconds: 28800, loginSeconds: 27600, productiveSeconds: 23000, availableSeconds: 4300, shrinkageSeconds: 2200, adherenceSeconds: 26400, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 36, date: '2026-06-01', type: 'Outbound', agent: 'Nico Paz',   documento: '1034567890', queue: 'Encuestas', hour: '11:00', durationSeconds: 205, waitSeconds: 10, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.3, qaScore: 91, scheduledSeconds: 28800, loginSeconds: 27300, productiveSeconds: 22100, availableSeconds: 4900, shrinkageSeconds: 2500, adherenceSeconds: 26000, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 37, date: '2026-06-01', type: 'Inbound',  agent: 'Sara Gil',   documento: '1056789012', queue: 'Soporte',   hour: '12:00', durationSeconds: 395, waitSeconds: 20, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.7, qaScore: 96, scheduledSeconds: 28800, loginSeconds: 27900, productiveSeconds: 23500, availableSeconds: 3800, shrinkageSeconds: 1900, adherenceSeconds: 26700, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 38, date: '2026-06-01', type: 'Inbound',  agent: 'Pedro Alba', documento: '1012345678', queue: 'Soporte',   hour: '13:00', durationSeconds: 246, waitSeconds: 58, abandoned: true,  answeredWithinSla: false, resolvedFirstContact: false, transferred: false, score: 3.2, qaScore: 71, scheduledSeconds: 28800, loginSeconds: 22500, productiveSeconds: 16200, availableSeconds: 6300, shrinkageSeconds: 5600, adherenceSeconds: 20900, scheduled: true, staffed: false, attendanceStatus: 'Ausente' },
-  { id: 39, date: '2026-06-01', type: 'Outbound', agent: 'Ana Ruiz',   documento: '1045678923', queue: 'Ventas',    hour: '14:00', durationSeconds: 324, waitSeconds: 13, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.8, qaScore: 98, scheduledSeconds: 28800, loginSeconds: 28400, productiveSeconds: 24500, availableSeconds: 3100, shrinkageSeconds: 1400, adherenceSeconds: 27900, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 40, date: '2026-06-01', type: 'Inbound',  agent: 'Luis Mora',  documento: '1023456789', queue: 'Retencion', hour: '15:00', durationSeconds: 372, waitSeconds: 32, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.2, qaScore: 89, scheduledSeconds: 28800, loginSeconds: 27100, productiveSeconds: 21900, availableSeconds: 4800, shrinkageSeconds: 2700, adherenceSeconds: 25800, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-
-  { id: 41, date: '2026-06-10', type: 'Inbound',  agent: 'Mia Cano',   documento: '1067890123', queue: 'Soporte',   hour: '08:00', durationSeconds: 321, waitSeconds: 27, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.6, qaScore: 94, scheduledSeconds: 28800, loginSeconds: 27700, productiveSeconds: 23200, availableSeconds: 4200, shrinkageSeconds: 2100, adherenceSeconds: 26500, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 42, date: '2026-06-10', type: 'Outbound', agent: 'Sara Gil',   documento: '1056789012', queue: 'Ventas',    hour: '09:00', durationSeconds: 263, waitSeconds: 16, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.5, qaScore: 92, scheduledSeconds: 28800, loginSeconds: 27400, productiveSeconds: 22800, availableSeconds: 4400, shrinkageSeconds: 2300, adherenceSeconds: 26100, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 43, date: '2026-06-10', type: 'Inbound',  agent: 'Nico Paz',   documento: '1034567890', queue: 'Retencion', hour: '10:00', durationSeconds: 237, waitSeconds: 12, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.4, qaScore: 92, scheduledSeconds: 28800, loginSeconds: 27600, productiveSeconds: 22400, availableSeconds: 4600, shrinkageSeconds: 2400, adherenceSeconds: 26300, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 44, date: '2026-06-10', type: 'Inbound',  agent: 'Pedro Alba', documento: '1012345678', queue: 'Soporte',   hour: '11:00', durationSeconds: 278, waitSeconds: 52, abandoned: true,  answeredWithinSla: false, resolvedFirstContact: false, transferred: true,  score: 3.4, qaScore: 74, scheduledSeconds: 28800, loginSeconds: 23200, productiveSeconds: 17100, availableSeconds: 6100, shrinkageSeconds: 5000, adherenceSeconds: 21700, scheduled: true, staffed: true,  attendanceStatus: 'Tarde' },
-  { id: 45, date: '2026-06-10', type: 'Outbound', agent: 'Luis Mora',  documento: '1023456789', queue: 'Encuestas', hour: '12:00', durationSeconds: 209, waitSeconds: 21, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: false, transferred: false, score: 4.1, qaScore: 87, scheduledSeconds: 28800, loginSeconds: 26700, productiveSeconds: 21100, availableSeconds: 5300, shrinkageSeconds: 2800, adherenceSeconds: 25400, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 46, date: '2026-06-10', type: 'Inbound',  agent: 'Ana Ruiz',   documento: '1045678923', queue: 'Soporte',   hour: '13:00', durationSeconds: 348, waitSeconds: 15, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.9, qaScore: 98, scheduledSeconds: 28800, loginSeconds: 28500, productiveSeconds: 24600, availableSeconds: 3000, shrinkageSeconds: 1300, adherenceSeconds: 28000, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 47, date: '2026-06-10', type: 'Inbound',  agent: 'Sara Gil',   documento: '1056789012', queue: 'Retencion', hour: '14:00', durationSeconds: 403, waitSeconds: 22, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.6, qaScore: 95, scheduledSeconds: 28800, loginSeconds: 27900, productiveSeconds: 23600, availableSeconds: 3800, shrinkageSeconds: 1800, adherenceSeconds: 26700, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
-  { id: 48, date: '2026-06-10', type: 'Outbound', agent: 'Mia Cano',   documento: '1067890123', queue: 'Encuestas', hour: '15:00', durationSeconds: 256, waitSeconds: 30, abandoned: false, answeredWithinSla: true,  resolvedFirstContact: true,  transferred: false, score: 4.3, qaScore: 89, scheduledSeconds: 28800, loginSeconds: 26900, productiveSeconds: 21400, availableSeconds: 5200, shrinkageSeconds: 2900, adherenceSeconds: 25600, scheduled: true, staffed: true,  attendanceStatus: 'Presente' },
+// ─── Campañas Vicidial (campaign_id) ─────────────────────────────────────────
+const CAMPAIGNS = [
+  { id: 'SOPORTE_IN',    type: 'Inbound'  as const, slaTarget: 20 },
+  { id: 'VENTAS_IN',     type: 'Inbound'  as const, slaTarget: 25 },
+  { id: 'COBROS_IN',     type: 'Inbound'  as const, slaTarget: 30 },
+  { id: 'VENTAS_OUT',    type: 'Outbound' as const, slaTarget: 0  },
+  { id: 'COBROS_OUT',    type: 'Outbound' as const, slaTarget: 0  },
+  { id: 'ENCUESTAS_OUT', type: 'Outbound' as const, slaTarget: 0  },
 ];
+
+// ─── Días hábiles ABR 1 – JUN 14, 2026 (lun–sáb) ────────────────────────────
+function workDays(from: string, to: string): string[] {
+  const days: string[] = [];
+  const cur = new Date(from + 'T12:00:00Z');
+  const end = new Date(to + 'T12:00:00Z');
+  while (cur <= end) {
+    if (cur.getUTCDay() !== 0) days.push(cur.toISOString().slice(0, 10));
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+  return days;
+}
+const DAYS = workDays('2026-04-01', '2026-06-14');
+
+// Franjas horarias de operación
+const HOURS   = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
+// Pesos por hora: picos 09-11 y 14-16, almuerzo bajo en 12-13, cierre suave
+const WEIGHTS = [  0.40,   0.70,   1.00,   1.00,   0.90,   0.52,   0.60,   1.00,   0.95,   0.75,   0.55,   0.35];
+
+// ─── RNG determinístico (sin Math.random → datos reproducibles) ───────────────
+let _s = 0;
+const rn  = () => { const x = Math.sin(++_s * 9301 + 49297) * 233280; return x - Math.floor(x); };
+const pick = <T>(a: readonly T[]) => a[Math.floor(rn() * a.length)];
+const btw  = (lo: number, hi: number) => Math.round(lo + rn() * (hi - lo));
+
+// ─── Generación de llamadas ───────────────────────────────────────────────────
+const _calls: CallRecord[] = [];
+let _uid = 1;
+
+for (const date of DAYS) {
+  for (let hi = 0; hi < HOURS.length; hi++) {
+    const hour   = HOURS[hi];
+    const weight = WEIGHTS[hi];
+    // ~8 llamadas por hora en promedio ponderado → ~80 llamadas/día → ~6 200 total
+    const n = Math.max(1, Math.round((4 + rn() * 6) * weight));
+
+    for (let c = 0; c < n; c++) {
+      const agent    = pick(AGENTS);
+      const campaign = pick(CAMPAIGNS);
+
+      // ── Vicidial status logic ──────────────────────────────────────────────
+      // Inbound:  ~6.2% abandonadas (AB), resto A / CLOSER / DC
+      // Outbound: N (no answer) / B (busy) / SALE / NI / A — nunca AB
+      const abandoned = campaign.type === 'Inbound' && rn() < 0.062;
+
+      // queue_seconds: tiempo en cola antes de atención (Vicidial: queue_seconds)
+      const waitSeconds = abandoned ? btw(22, 210) : btw(3, 95);
+
+      // SLA: meta < slaTarget seg → status A dentro de tiempo
+      const slaOk = campaign.slaTarget > 0
+        ? !abandoned && (waitSeconds <= campaign.slaTarget ? rn() < 0.94 : rn() < 0.22)
+        : rn() < 0.58; // outbound SLA conceptual
+
+      // length_in_sec: duración (Vicidial: length_in_sec)
+      const durationSeconds = abandoned
+        ? btw(10, 80)
+        : campaign.type === 'Inbound'
+          ? btw(75, 560)
+          : btw(25, 440);
+
+      // CLOSER / transfer: ~12%
+      const transferred = !abandoned && rn() < 0.12;
+
+      // FCR: ~74% cuando no abandonada ni transferida
+      const resolvedFirstContact = !abandoned && !transferred && rn() < 0.74;
+
+      // ── vicidial_agent_log ─────────────────────────────────────────────────
+      const loginSeconds      = btw(24300, 34200); // 6.75–9.5 h
+      const productiveSeconds = Math.round(loginSeconds * (0.58 + rn() * 0.24));
+      const shrinkageSeconds  = Math.round(loginSeconds * (0.07 + rn() * 0.09));
+      const scheduledSeconds  = 28800; // turno estándar 8h
+      const adherenceSeconds  = Math.round(scheduledSeconds * (0.86 + rn() * 0.12));
+      const availableSeconds  = btw(10, 100);
+
+      // Asistencia
+      const ar = rn();
+      const attendanceStatus  = ar < 0.83 ? 'Presente' : ar < 0.93 ? 'Tarde' : 'Ausente';
+      const staffed           = attendanceStatus !== 'Ausente';
+
+      // CSAT (1-5) y QA score
+      const rawScore = abandoned ? 1.2 + rn() * 1.4 : transferred ? 2.9 + rn() * 1.3 : 3.3 + rn() * 1.7;
+      const score    = Math.round(Math.min(5, rawScore) * 10) / 10;
+      const qaScore  = abandoned ? btw(42, 70) : transferred ? btw(60, 83) : btw(68, 100);
+
+      _calls.push({
+        id:                   `VID-${String(_uid++).padStart(6, '0')}`,
+        date,
+        type:                 campaign.type,
+        agent:                agent.login,
+        documento:            agent.doc,
+        queue:                campaign.id,
+        hour,
+        durationSeconds,
+        waitSeconds,
+        abandoned,
+        answeredWithinSla:    !abandoned && slaOk,
+        resolvedFirstContact,
+        transferred,
+        score,
+        qaScore,
+        scheduledSeconds,
+        loginSeconds,
+        productiveSeconds,
+        availableSeconds,
+        shrinkageSeconds,
+        adherenceSeconds,
+        scheduled:            true,
+        staffed,
+        attendanceStatus,
+      });
+    }
+  }
+}
+
+export const sampleCalls: CallRecord[] = _calls;
