@@ -178,15 +178,49 @@ function App() {
   );
   const activeCalls = useMemo(() => activeDataset.calls, [activeDataset]);
 
-  const availableDays   = useMemo(() => [...new Set(activeCalls.map((c) => c.date).filter(Boolean))].sort().reverse() as string[], [activeCalls]);
-  const availableMonths = useMemo(() => [...new Set(activeCalls.map((c) => c.date?.slice(0, 7)).filter(Boolean))].sort().reverse() as string[], [activeCalls]);
-  const availableYears  = useMemo(() => [...new Set(activeCalls.map((c) => c.date?.slice(0, 4)).filter(Boolean))].sort().reverse() as string[], [activeCalls]);
-  const availableQueues = useMemo(() => [...new Set(activeCalls.map((c) => c.queue).filter(Boolean))].sort() as string[], [activeCalls]);
-  const hasDates = availableDays.length > 0;
-
   const periodCalls   = useMemo(() => filterByPeriod(activeCalls, period, periodValue), [activeCalls, period, periodValue]);
   const campaignCalls = useMemo(() => campaignFilter ? periodCalls.filter((c) => c.queue === campaignFilter) : periodCalls, [periodCalls, campaignFilter]);
   const visibleCalls  = useMemo(() => filterCalls(campaignCalls, typeFilter), [campaignCalls, typeFilter]);
+
+  // Cascading filter options — each reflects the other active filters
+  // Campaigns available: only those with calls matching the current type (in the selected period)
+  const availableQueues = useMemo(() => {
+    const base = filterCalls(periodCalls, typeFilter);
+    return [...new Set(base.map((c) => c.queue).filter(Boolean))].sort() as string[];
+  }, [periodCalls, typeFilter]);
+
+  // Types available: only those present in calls matching the current campaign (in the selected period)
+  const availableTypes = useMemo(() => {
+    const base = campaignFilter ? periodCalls.filter((c) => c.queue === campaignFilter) : periodCalls;
+    const present = new Set(base.map((c) => c.type));
+    return (typeFilters as readonly string[]).filter((f) => f === 'Todos' || present.has(f));
+  }, [periodCalls, campaignFilter]);
+
+  // Dates available: only dates that have calls matching current type + campaign
+  const datesBase = useMemo(() => {
+    let calls = filterCalls(activeCalls, typeFilter);
+    if (campaignFilter) calls = calls.filter((c) => c.queue === campaignFilter);
+    return calls;
+  }, [activeCalls, typeFilter, campaignFilter]);
+
+  const availableDays   = useMemo(() => [...new Set(datesBase.map((c) => c.date).filter(Boolean))].sort().reverse() as string[], [datesBase]);
+  const availableMonths = useMemo(() => [...new Set(datesBase.map((c) => c.date?.slice(0, 7)).filter(Boolean))].sort().reverse() as string[], [datesBase]);
+  const availableYears  = useMemo(() => [...new Set(datesBase.map((c) => c.date?.slice(0, 4)).filter(Boolean))].sort().reverse() as string[], [datesBase]);
+  const hasDates = availableDays.length > 0;
+
+  // Auto-reset campaign when it's no longer in the available list after type changes
+  useEffect(() => {
+    if (campaignFilter && availableQueues.length > 0 && !availableQueues.includes(campaignFilter)) {
+      setCampaignFilter('');
+    }
+  }, [availableQueues, campaignFilter]);
+
+  // Auto-reset type when it's no longer available after campaign changes
+  useEffect(() => {
+    if (typeFilter !== 'Todos' && !availableTypes.includes(typeFilter)) {
+      setTypeFilter('Todos');
+    }
+  }, [availableTypes, typeFilter]);
   const metrics      = useMemo(() => calculateMetrics(visibleCalls), [visibleCalls]);
 
   // Additional date range filter applied only to the chart grid
@@ -513,7 +547,7 @@ function App() {
                 className="h-9 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-ink shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-white"
                 aria-label="Filtrar por tipo"
               >
-                {typeFilters.map((f) => <option key={f}>{f}</option>)}
+                {availableTypes.map((f) => <option key={f}>{f}</option>)}
               </select>
 
               <select
