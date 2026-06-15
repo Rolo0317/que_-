@@ -30,29 +30,62 @@ select {
 }
 
 @media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm 12mm;
+  }
+
+  /* hide chrome */
   aside,
+  nav,
+  header,
   [data-no-print] {
     display: none !important;
   }
 
+  /* expand content to full width */
   main {
     margin-left: 0 !important;
-    padding: 8px !important;
+    padding: 0 !important;
   }
 
   body,
   html {
     background: white !important;
-    color: black !important;
+    color: #102027 !important;
+    font-size: 10pt !important;
   }
 
+  /* force background colors to print (badges, bars, etc.) */
   * {
     box-shadow: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
+  /* report header injected via CSS */
+  main::before {
+    content: 'QUE+ · Informe de indicadores';
+    display: block;
+    font-size: 14pt;
+    font-weight: 700;
+    color: #11AEB3;
+    border-bottom: 2px solid #11AEB3;
+    padding-bottom: 4mm;
+    margin-bottom: 6mm;
+  }
+
+  /* avoid splitting cards across pages */
   section,
-  article {
+  article,
+  [class*='rounded-xl'],
+  [class*='rounded-lg'] {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  /* chart SVGs: don't clip */
+  svg {
+    overflow: visible !important;
   }
 }

@@ -17,6 +17,7 @@ import { ToastContainer } from './components/ToastContainer';
 import { WfmView } from './components/WfmView';
 import { WorldCupSplash } from './components/WorldCupSplash';
 import { QuickGuide } from './components/QuickGuide';
+import { ExportButton } from './components/ExportButton';
 import { MODULES } from './config/modules';
 import { fetchHealth, fetchReport, uploadReport } from './lib/api';
 import { parseExcelFile } from './lib/excel';
@@ -204,6 +205,14 @@ function App() {
   const statusText = `${activeDataset.name} · ${visibleCalls.length} de ${activeCalls.length} registros`;
   const fmt = (v: number) => `${(v * 100).toFixed(2)}%`;
 
+  const filtersStr = useMemo(() => {
+    const parts: string[] = [];
+    if (campaignFilter) parts.push(`Campaña: ${campaignFilter}`);
+    if (typeFilter !== 'Todos') parts.push(`Tipo: ${typeFilter}`);
+    if (period !== 'todos' && periodValue) parts.push(`Período: ${periodValue}`);
+    return parts.length > 0 ? parts.join(' | ') : 'Sin filtros';
+  }, [campaignFilter, typeFilter, period, periodValue]);
+
   // ── API ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     let mounted = true;
@@ -388,6 +397,14 @@ function App() {
                 <RefreshCw size={15} aria-hidden="true" />
                 <span className="hidden sm:inline">API</span>
               </button>
+              <ExportButton
+                options={{
+                  datasetName: activeDataset.name,
+                  calls: visibleCalls,
+                  agentStats,
+                  filters: filtersStr,
+                }}
+              />
               <FileUploader onFile={handleFile} />
             </div>
           </motion.header>
