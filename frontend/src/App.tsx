@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { BarChart3, RefreshCw, Settings } from 'lucide-react';
+import { BarChart3, Calendar, RefreshCw, Settings } from 'lucide-react';
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Navigate, NavLink, Route, Routes, useLocation, useSearchParams } from 'react-router-dom';
 import { AgentView } from './components/AgentView';
@@ -140,6 +140,8 @@ function App() {
   const [selectedCharts, setSelectedCharts] = useState<ChartId[]>(['hourly', 'mix', 'scores']);
   const [layout, setLayout]                 = useState<ReportLayout>('2');
   const [showThresholds, setShowThresholds] = useState(false);
+  const [chartFrom, setChartFrom]           = useState('');
+  const [chartTo,   setChartTo]             = useState('');
 
   // ── Derived ──────────────────────────────────────────────────────────────
   const activeDataset = useMemo(
@@ -157,12 +159,38 @@ function App() {
   const visibleCalls = useMemo(() => filterCalls(periodCalls, typeFilter), [periodCalls, typeFilter]);
   const metrics      = useMemo(() => calculateMetrics(visibleCalls), [visibleCalls]);
 
-  const hourlyData  = useMemo(() => callsByHour(visibleCalls),   [visibleCalls]);
-  const typeData    = useMemo(() => callsByType(visibleCalls),    [visibleCalls]);
-  const scoreData   = useMemo(() => agentScores(visibleCalls),   [visibleCalls]);
-  const slaData     = useMemo(() => slaByHour(visibleCalls),     [visibleCalls]);
-  const abandonData = useMemo(() => abandonByHour(visibleCalls), [visibleCalls]);
-  const queueData   = useMemo(() => callsByQueue(visibleCalls),  [visibleCalls]);
+  // Additional date range filter applied only to the chart grid
+  const chartCalls = useMemo(() => {
+    if (!chartFrom && !chartTo) return visibleCalls;
+    return visibleCalls.filter((c) => {
+      if (!c.date) return true;
+      if (chartFrom && c.date < chartFrom) return false;
+      if (chartTo   && c.date > chartTo)   return false;
+      return true;
+    });
+  }, [visibleCalls, chartFrom, chartTo]);
+
+  // Preset date ranges (computed once at mount)
+  const chartPresets = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const ago = (n: number) => {
+      const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10);
+    };
+    return [
+      { label: 'Hoy',     from: today,  to: today },
+      { label: '7 días',  from: ago(6),  to: today },
+      { label: '1 mes',   from: ago(29), to: today },
+      { label: '3 meses', from: ago(89), to: today },
+      { label: 'Todo',    from: '',      to: ''    },
+    ];
+  }, []);
+
+  const hourlyData  = useMemo(() => callsByHour(chartCalls),   [chartCalls]);
+  const typeData    = useMemo(() => callsByType(chartCalls),    [chartCalls]);
+  const scoreData   = useMemo(() => agentScores(chartCalls),   [chartCalls]);
+  const slaData     = useMemo(() => slaByHour(chartCalls),     [chartCalls]);
+  const abandonData = useMemo(() => abandonByHour(chartCalls), [chartCalls]);
+  const queueData   = useMemo(() => callsByQueue(chartCalls),  [chartCalls]);
   const agentCount  = useMemo(() => new Set(visibleCalls.map((c) => c.agent)).size, [visibleCalls]);
   const agentStats  = useMemo(() => agentDetailStats(visibleCalls), [visibleCalls]);
   const kpiAlerts   = useKpiAlerts(visibleCalls);
@@ -343,7 +371,7 @@ function App() {
                 }`}
               >
                 <Settings size={15} aria-hidden="true" />
-                <span className="hidden sm:inline">Umbrales</span>
+                <span className="hidden sm:inline">Metas</span>
               </button>
               <button
                 type="button"
@@ -562,6 +590,67 @@ function App() {
                   layout={layout}
                   onLayoutChange={setLayout}
                 />
+              </div>
+
+              {/* Date range filter for chart grid */}
+              <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-slate-900" data-no-print>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar size={13} className="text-que-teal" aria-hidden="true" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-white/30">Rango gráficas</span>
+                  </div>
+                  <div className="h-4 w-px bg-slate-200 dark:bg-white/10" />
+                  {chartPresets.map((p) => {
+                    const active = chartFrom === p.from && chartTo === p.to;
+                    return (
+                      <button
+                        key={p.label}
+                        type="button"
+                        onClick={() => { setChartFrom(p.from); setChartTo(p.to); }}
+                        className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition ${
+                          active
+                            ? 'bg-que-teal text-white shadow-sm'
+                            : 'bg-slate-50 text-slate-500 hover:bg-slate-100 dark:bg-white/5 dark:text-white/40 dark:hover:bg-white/10'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    );
+                  })}
+                  <div className="h-4 w-px bg-slate-200 dark:bg-white/10" />
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[11px] text-slate-400 dark:text-white/30">Desde</span>
+                    <input
+                      type="date"
+                      value={chartFrom}
+                      min={availableDays.at(-1)}
+                      max={chartTo || availableDays[0]}
+                      onChange={(e) => setChartFrom(e.target.value)}
+                      className="h-7 rounded-lg border border-slate-200 bg-slate-50 px-2 text-[11px] text-ink dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    />
+                    <span className="text-[11px] text-slate-400 dark:text-white/30">hasta</span>
+                    <input
+                      type="date"
+                      value={chartTo}
+                      min={chartFrom || availableDays.at(-1)}
+                      max={availableDays[0]}
+                      onChange={(e) => setChartTo(e.target.value)}
+                      className="h-7 rounded-lg border border-slate-200 bg-slate-50 px-2 text-[11px] text-ink dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    />
+                  </div>
+                  {(chartFrom || chartTo) && (
+                    <button
+                      type="button"
+                      onClick={() => { setChartFrom(''); setChartTo(''); }}
+                      className="text-[11px] font-semibold text-rose-400 transition hover:text-rose-600 dark:text-rose-400/70 dark:hover:text-rose-400"
+                    >
+                      × Limpiar
+                    </button>
+                  )}
+                  <span className="ml-auto rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-slate-500 dark:bg-white/5 dark:text-white/40">
+                    {chartCalls.length.toLocaleString('es-CO')} registros
+                  </span>
+                </div>
               </div>
 
               <section className={`mt-6 ${layout === '3' ? 'grid gap-6 md:grid-cols-2 xl:grid-cols-3' : 'grid gap-6 xl:grid-cols-2'}`}>

@@ -21,7 +21,7 @@ import type { ReactNode } from 'react';
 import type { AbandonHourBucket, AgentScore, HourlyBucket, QueueBucket, SlaHourBucket, TypeBucket } from '../types/calls';
 
 const COLORS = ['#11AEB3', '#FF9700', '#08777d', '#ff6f4f', '#6f5dd5', '#10b981'];
-const LABEL_STYLE = { fontSize: 10, fontWeight: 600, fill: '#64748b' };
+const LABEL_STYLE = { fontSize: 10, fontWeight: 600, fill: 'var(--chart-label)' };
 
 const n = (v: unknown): number => (typeof v === 'number' ? v : 0);
 
@@ -77,7 +77,7 @@ function PieCustomLabel(props: PieLabelRenderProps) {
   const x = n(cx) + radius * Math.cos(-n(midAngle) * RADIAN);
   const y = n(cy) + radius * Math.sin(-n(midAngle) * RADIAN);
   return (
-    <text x={x} y={y} textAnchor={x > n(cx) ? 'start' : 'end'} dominantBaseline="central" fontSize={11} fontWeight={600} fill="#475569">
+    <text x={x} y={y} textAnchor={x > n(cx) ? 'start' : 'end'} dominantBaseline="central" fontSize={11} fontWeight={600} fill="var(--chart-label)">
       <tspan x={x} dy="0">{String(name)}</tspan>
       <tspan x={x} dy="14" fontWeight={700}>{n(value)} ({(n(percent) * 100).toFixed(1)}%)</tspan>
     </text>
@@ -222,7 +222,7 @@ function QueueCustomLabel(props: PieLabelRenderProps) {
   const x = n(cx) + radius * Math.cos(-n(midAngle) * RADIAN);
   const y = n(cy) + radius * Math.sin(-n(midAngle) * RADIAN);
   return (
-    <text x={x} y={y} textAnchor={x > n(cx) ? 'start' : 'end'} dominantBaseline="central" fontSize={11} fontWeight={600} fill="#475569">
+    <text x={x} y={y} textAnchor={x > n(cx) ? 'start' : 'end'} dominantBaseline="central" fontSize={11} fontWeight={600} fill="var(--chart-label)">
       <tspan x={x} dy="0">{String(name)}</tspan>
       <tspan x={x} dy="14" fontWeight={700}>{n(value)} ({(n(percent) * 100).toFixed(1)}%)</tspan>
     </text>

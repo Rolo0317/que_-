@@ -52,7 +52,7 @@ export function ThresholdConfig({ thresholds: t, onUpdate, onReset, onClose }: P
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-panel dark:border-white/10 dark:bg-slate-900">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-bold text-ink dark:text-white">Configurar umbrales de semáforo</h3>
+        <h3 className="text-sm font-bold text-ink dark:text-white">Editar metas del dashboard</h3>
         <div className="flex items-center gap-2">
           <button
             type="button"
