@@ -115,24 +115,26 @@ export function TypeMixChart({ data }: { data: TypeBucket[] }) {
   );
 }
 
-// ─── Calificación por agente ──────────────────────────────────────────────────
+// ─── Calificación por agente (Top 20 horizontal) ─────────────────────────────
 export function AgentScoreChart({ data }: { data: AgentScore[] }) {
+  const top = [...data].sort((a, b) => b.score - a.score).slice(0, 20);
+  const title = `Calificación por agente${data.length > 20 ? ` · Top 20 de ${data.length}` : ''}`;
   return (
-    <ChartPanel title="Calificacion por agente">
-      {data.length === 0 ? <EmptyChart /> : (
+    <ChartPanel title={title}>
+      {top.length === 0 ? <EmptyChart /> : (
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 20, right: 16, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#dbe4ee" />
-            <XAxis dataKey="agent" tick={{ fontSize: 11 }} />
-            <YAxis domain={[0, 5]} tick={{ fontSize: 11 }} />
+          <BarChart data={top} layout="vertical" margin={{ top: 4, right: 48, left: 4, bottom: 4 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#dbe4ee" vertical={false} />
+            <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 10 }} />
+            <YAxis type="category" dataKey="agent" tick={{ fontSize: 10 }} width={74} />
             <Tooltip
               contentStyle={{ fontSize: 12, borderRadius: 8 }}
               formatter={(v) => [n(v).toFixed(2), 'Score'] as [string, string]}
             />
-            <Bar dataKey="score" fill="#FF9700" radius={[6, 6, 0, 0]} name="Score">
+            <Bar dataKey="score" fill="#FF9700" radius={[0, 6, 6, 0]} name="Score">
               <LabelList
                 dataKey="score"
-                position="top"
+                position="right"
                 formatter={(v: unknown) => n(v).toFixed(2)}
                 style={LABEL_STYLE}
               />

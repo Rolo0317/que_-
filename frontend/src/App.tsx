@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { BarChart3, Calendar, RefreshCw, Settings } from 'lucide-react';
+import { BarChart3, Calendar, RefreshCw, Settings, Upload } from 'lucide-react';
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Navigate, NavLink, Route, Routes, useLocation, useSearchParams } from 'react-router-dom';
 import { AgentView } from './components/AgentView';
@@ -17,7 +17,6 @@ import { ToastContainer } from './components/ToastContainer';
 import { WfmView } from './components/WfmView';
 import { WorldCupSplash } from './components/WorldCupSplash';
 import { MODULES } from './config/modules';
-import { sampleCalls } from './data/sampleCalls';
 import { fetchHealth, fetchReport, uploadReport } from './lib/api';
 import { parseExcelFile } from './lib/excel';
 import {
@@ -52,8 +51,8 @@ type Period = 'todos' | 'dia' | 'mes' | 'año';
 
 const DEMO_DATASET: Dataset = {
   id: 'demo',
-  name: 'Datos de muestra',
-  calls: sampleCalls,
+  name: 'Sin datos · carga tu Excel',
+  calls: [],
   loadedAt: new Date(),
   source: 'demo',
 };
@@ -489,6 +488,30 @@ function App() {
 
               <span className="text-xs text-slate-400 dark:text-white/30">{visibleCalls.length} registros</span>
             </div>
+          )}
+
+          {/* ── No-data onboarding banner ── */}
+          {activeCalls.length === 0 && !isArchivos && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-8 rounded-2xl border-2 border-dashed border-que-teal/20 bg-que-teal/5 p-10 text-center dark:border-que-teal/10 dark:bg-que-teal/[0.04]"
+            >
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-que-teal/10 dark:bg-que-teal/20">
+                <Upload size={24} className="text-que-teal" aria-hidden="true" />
+              </div>
+              <h2 className="text-lg font-bold text-ink dark:text-white">Sin datos cargados</h2>
+              <p className="mt-1.5 text-sm text-slate-500 dark:text-white/50">
+                Carga un archivo <span className="font-semibold text-que-teal">.xlsx</span> con los datos de tu call center para visualizar el dashboard
+              </p>
+              <NavLink
+                to="/archivos"
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-que-teal px-6 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-que-teal/90 active:scale-95"
+              >
+                <Upload size={15} aria-hidden="true" />
+                Ir a Archivos → cargar Excel
+              </NavLink>
+            </motion.div>
           )}
 
           {/* ── Routes ── */}
