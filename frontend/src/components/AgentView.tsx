@@ -5,7 +5,7 @@ import { exportAgentsToCsv } from '../lib/exportCsv';
 import type { AgentStats } from '../types/calls';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const fp = (v: number) => `${(v * 100).toFixed(0)}%`;
+const fp = (v: number) => `${(v * 100).toFixed(2)}%`;
 const fs = (s: number) => {
   const m = Math.floor(s / 60);
   const sec = Math.round(s % 60);

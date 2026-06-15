@@ -23,7 +23,7 @@ interface CompareViewProps {
   onClose: () => void;
 }
 
-const fmt  = (v: number) => `${(v * 100).toFixed(1)}%`;
+const fmt  = (v: number) => `${(v * 100).toFixed(2)}%`;
 const fmtS = (s: number) => `${Math.round(s)}s`;
 
 function StatRow({ label, a, b }: { label: string; a: string; b: string }) {
@@ -59,7 +59,7 @@ export function CompareView({ datasetA, datasetB, onClose }: CompareViewProps) {
     { label: 'FCR',         a: mA.firstContactResolution, b: mB.firstContactResolution },
     { label: 'Utilización', a: mA.utilization,           b: mB.utilization },
     { label: 'Adherencia',  a: mA.adherence,             b: mB.adherence },
-  ].map(({ label, a, b }) => ({ label, [datasetA.name]: +(a * 100).toFixed(1), [datasetB.name]: +(b * 100).toFixed(1) }));
+  ].map(({ label, a, b }) => ({ label, [datasetA.name]: +(a * 100).toFixed(2), [datasetB.name]: +(b * 100).toFixed(2) }));
 
   return (
     <motion.div

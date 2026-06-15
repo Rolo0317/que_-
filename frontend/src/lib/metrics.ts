@@ -108,7 +108,7 @@ export function slaByHour(calls: CallRecord[]): SlaHourBucket[] {
   });
   return Array.from(buckets, ([hour, { total, withinSla }]) => ({
     hour,
-    sla: total ? Math.round((withinSla / total) * 100) : 0,
+    sla: total ? parseFloat(((withinSla / total) * 100).toFixed(2)) : 0,
   })).sort((a, b) => a.hour.localeCompare(b.hour));
 }
 
@@ -123,7 +123,7 @@ export function abandonByHour(calls: CallRecord[]): AbandonHourBucket[] {
   });
   return Array.from(buckets, ([hour, { total, abandoned }]) => ({
     hour,
-    abandonRate: total ? Math.round((abandoned / total) * 100) : 0,
+    abandonRate: total ? parseFloat(((abandoned / total) * 100).toFixed(2)) : 0,
   })).sort((a, b) => a.hour.localeCompare(b.hour));
 }
 

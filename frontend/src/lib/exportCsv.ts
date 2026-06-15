@@ -1,7 +1,7 @@
 import type { AgentStats } from '../types/calls';
 
 const fs = (s: number) => `${Math.round(s)}s`;
-const fp = (v: number) => `${(v * 100).toFixed(1)}%`;
+const fp = (v: number) => `${(v * 100).toFixed(2)}%`;
 
 export function exportAgentsToCsv(agents: AgentStats[], filename?: string): void {
   const headers = ['Agente', 'Documento', 'Llamadas', 'TMO', 'Satisfaccion', 'QA Score', 'SLA', 'FCR', 'Transferencias', 'Abandono', 'ASA'];

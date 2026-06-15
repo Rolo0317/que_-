@@ -45,7 +45,7 @@ const AbandonHourChart = lazy(() => import('./components/Charts').then((m) => ({
 const QueueChart       = lazy(() => import('./components/Charts').then((m) => ({ default: m.QueueChart })));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const fmt  = (v: number) => `${(v * 100).toFixed(1)}%`;
+const fmt  = (v: number) => `${(v * 100).toFixed(2)}%`;
 const fmtS = (s: number) => `${Math.round(s)} s`;
 const pct    = (v: number, g: number, w: number): KpiStatus => v >= g ? 'good' : v >= w ? 'warning' : 'bad';
 const pctInv = (v: number, g: number, w: number): KpiStatus => v <= g ? 'good' : v <= w ? 'warning' : 'bad';

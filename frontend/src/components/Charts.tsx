@@ -141,7 +141,7 @@ export function QueueChart({ data }: { data: QueueBucket[] }) {
       {data.length === 0 ? <EmptyChart /> : (
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie data={data} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
+            <Pie data={data} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(2)}%`} labelLine={false}>
               {data.map((entry, index) => (
                 <Cell key={entry.name} fill={colors[index % colors.length]} />
               ))}
