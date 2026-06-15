@@ -1,4 +1,4 @@
-import { BarChart3, Check, Layers, PieChart, Printer, ShieldCheck, TrendingDown, TrendingUp } from 'lucide-react';
+import { BarChart3, Check, Layers, PieChart, ShieldCheck, TrendingDown, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BrandLogo } from './BrandLogo';
 
@@ -94,37 +94,24 @@ export function ReportBuilder({ selected, onChange, layout, onLayoutChange }: Re
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Layout selector */}
-          <div className="hidden items-center gap-1 rounded-lg border border-white/15 bg-white/10 p-1 sm:flex">
-            <span className="px-1.5 text-[10px] font-semibold uppercase tracking-wide text-white/40">Layout</span>
-            {(['2', '3'] as ReportLayout[]).map((l) => (
-              <button
-                key={l}
-                type="button"
-                onClick={() => onLayoutChange(l)}
-                className={`h-7 rounded px-2.5 text-xs font-bold transition-all ${
-                  layout === l
-                    ? 'bg-que-teal text-white shadow-sm'
-                    : 'text-white/50 hover:text-white'
-                }`}
-                title={`${l} columnas`}
-              >
-                {l}×
-              </button>
-            ))}
-          </div>
-
-          {/* Export button */}
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="flex items-center gap-1.5 rounded-lg bg-plus-orange px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-orange-500 active:scale-95"
-          >
-            <Printer size={13} aria-hidden="true" />
-            <span className="hidden sm:inline">Exportar PDF</span>
-            <span className="sm:hidden">PDF</span>
-          </button>
+        {/* Layout selector — hidden in print */}
+        <div className="hidden items-center gap-1 rounded-lg border border-white/15 bg-white/10 p-1 sm:flex" data-no-print>
+          <span className="px-1.5 text-[10px] font-semibold uppercase tracking-wide text-white/40">Layout</span>
+          {(['2', '3'] as ReportLayout[]).map((l) => (
+            <button
+              key={l}
+              type="button"
+              onClick={() => onLayoutChange(l)}
+              className={`h-7 rounded px-2.5 text-xs font-bold transition-all ${
+                layout === l
+                  ? 'bg-que-teal text-white shadow-sm'
+                  : 'text-white/50 hover:text-white'
+              }`}
+              title={`${l} columnas`}
+            >
+              {l}×
+            </button>
+          ))}
         </div>
       </div>
 

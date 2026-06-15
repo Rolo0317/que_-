@@ -141,12 +141,34 @@ function App() {
     setSearchParams((p) => { v ? p.set('campaign', v) : p.delete('campaign'); return p; }, { replace: true });
   }
 
-  // ── Report builder state ─────────────────────────────────────────────────
-  const [selectedCharts, setSelectedCharts] = useState<ChartId[]>(['hourly', 'mix', 'scores']);
-  const [layout, setLayout]                 = useState<ReportLayout>('2');
+  // ── Report builder state — persisted in localStorage ────────────────────
+  const VALID_IDS = new Set<ChartId>(['hourly', 'mix', 'scores', 'slaHour', 'abandonHour', 'queues']);
+  const [selectedCharts, setSelectedCharts] = useState<ChartId[]>(() => {
+    try {
+      const raw = localStorage.getItem('que-report-charts');
+      if (raw) {
+        const parsed = JSON.parse(raw) as ChartId[];
+        const valid = parsed.filter((id) => VALID_IDS.has(id));
+        if (valid.length > 0) return valid;
+      }
+    } catch { /* ignore */ }
+    return ['hourly', 'mix', 'scores'];
+  });
+  const [layout, setLayout] = useState<ReportLayout>(() => {
+    const saved = localStorage.getItem('que-report-layout');
+    return saved === '3' ? '3' : '2';
+  });
   const [showThresholds, setShowThresholds] = useState(false);
   const [chartFrom, setChartFrom]           = useState('');
   const [chartTo,   setChartTo]             = useState('');
+
+  useEffect(() => {
+    localStorage.setItem('que-report-charts', JSON.stringify(selectedCharts));
+  }, [selectedCharts]);
+
+  useEffect(() => {
+    localStorage.setItem('que-report-layout', layout);
+  }, [layout]);
 
   // ── Derived ──────────────────────────────────────────────────────────────
   const activeDataset = useMemo(
