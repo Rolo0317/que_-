@@ -8,3 +8,5 @@ npm-debug.log*
 *.log
 Dockerfile.local
 .DS_Store
+
+.vercel
