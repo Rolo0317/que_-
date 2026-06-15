@@ -1,6 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { BarChart3, RefreshCw, Settings } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Navigate, NavLink, Route, Routes, useLocation, useSearchParams } from 'react-router-dom';
 import { AgentView } from './components/AgentView';
 import { BrandLogo } from './components/BrandLogo';
@@ -27,7 +27,21 @@ import {
 import { useKpiAlerts } from './lib/useKpiAlerts';
 import { useThresholds } from './lib/useThresholds';
 import { useToast } from './lib/ToastContext';
+import { ReportBuilder } from './components/ReportBuilder';
 import type { ChartId, ReportLayout } from './components/ReportBuilder';
+
+const HourlyChart      = lazy(() => import('./components/Charts').then((m) => ({ default: m.HourlyChart })));
+const TypeMixChart     = lazy(() => import('./components/Charts').then((m) => ({ default: m.TypeMixChart })));
+const AgentScoreChart  = lazy(() => import('./components/Charts').then((m) => ({ default: m.AgentScoreChart })));
+const SlaHourChart     = lazy(() => import('./components/Charts').then((m) => ({ default: m.SlaHourChart })));
+const AbandonHourChart = lazy(() => import('./components/Charts').then((m) => ({ default: m.AbandonHourChart })));
+const QueueChart       = lazy(() => import('./components/Charts').then((m) => ({ default: m.QueueChart })));
+
+const ChartSkeleton = () => (
+  <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-panel dark:border-white/10 dark:bg-white/10">
+    <div className="h-72 animate-pulse rounded-md bg-slate-100 dark:bg-white/5" />
+  </div>
+);
 import type { CallRecord } from './types/calls';
 import type { Dataset } from './types/dataset';
 
@@ -205,13 +219,6 @@ function App() {
     }
   }
 
-  // ── Shared props for view components ─────────────────────────────────────
-  const sharedChartProps = {
-    selectedCharts,
-    onChartsChange: setSelectedCharts,
-    layout,
-    onLayoutChange: setLayout,
-  };
 
   return (
     <div className={theme === 'dark' ? 'dark' : ''}>
@@ -440,7 +447,7 @@ function App() {
               path="/wfm"
               element={
                 <motion.div key="wfm" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                  <WfmView calls={visibleCalls} thresholds={thresholds} {...sharedChartProps} queueData={queueData} />
+                  <WfmView calls={visibleCalls} thresholds={thresholds} />
                 </motion.div>
               }
             />
@@ -449,10 +456,7 @@ function App() {
               path="/operaciones"
               element={
                 <motion.div key="operaciones" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                  <OperacionesView
-                    calls={visibleCalls} thresholds={thresholds} {...sharedChartProps}
-                    hourlyData={hourlyData} typeData={typeData} slaData={slaData} abandonData={abandonData}
-                  />
+                  <OperacionesView calls={visibleCalls} thresholds={thresholds} />
                 </motion.div>
               }
             />
@@ -461,7 +465,7 @@ function App() {
               path="/calidad"
               element={
                 <motion.div key="calidad" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                  <CalidadView calls={visibleCalls} thresholds={thresholds} {...sharedChartProps} scoreData={scoreData} />
+                  <CalidadView calls={visibleCalls} thresholds={thresholds} />
                 </motion.div>
               }
             />
@@ -523,6 +527,47 @@ function App() {
 
             <Route path="*" element={<Navigate to="/operaciones" replace />} />
           </Routes>
+
+          {/* ── Shared chart grid (all analytics modules) ── */}
+          {!isAgentes && !isArchivos && (
+            <>
+              <div id="report-builder" className="mt-8" data-no-print>
+                <ReportBuilder
+                  selected={selectedCharts}
+                  onChange={setSelectedCharts}
+                  layout={layout}
+                  onLayoutChange={setLayout}
+                />
+              </div>
+
+              <section className={`mt-6 ${layout === '3' ? 'grid gap-6 md:grid-cols-2 xl:grid-cols-3' : 'grid gap-6 xl:grid-cols-2'}`}>
+                <Suspense fallback={<ChartSkeleton />}>
+                  {selectedCharts.length === 0 ? (
+                    <div className="col-span-full flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white py-16 text-center dark:border-white/10 dark:bg-white/5">
+                      <BarChart3 size={40} className="mb-3 text-slate-300 dark:text-white/20" aria-hidden="true" />
+                      <p className="text-sm font-semibold text-slate-500 dark:text-white/40">Ninguna gráfica seleccionada</p>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCharts(['hourly', 'mix', 'scores'])}
+                        className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-ink shadow-sm transition hover:border-que-teal dark:border-white/10 dark:bg-white/10 dark:text-white"
+                      >
+                        Restaurar por defecto
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {selectedCharts.includes('hourly')      && <HourlyChart data={hourlyData} />}
+                      {selectedCharts.includes('mix')         && <TypeMixChart data={typeData} />}
+                      {selectedCharts.includes('scores')      && <AgentScoreChart data={scoreData} />}
+                      {selectedCharts.includes('slaHour')     && <SlaHourChart data={slaData} />}
+                      {selectedCharts.includes('abandonHour') && <AbandonHourChart data={abandonData} />}
+                      {selectedCharts.includes('queues')      && <QueueChart data={queueData} />}
+                    </>
+                  )}
+                </Suspense>
+              </section>
+            </>
+          )}
 
           <DashboardFooter totalCalls={metrics.total} agentCount={agentCount} slaPercent={fmt(metrics.serviceLevel)} />
         </main>
