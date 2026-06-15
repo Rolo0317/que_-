@@ -90,10 +90,10 @@ function App() {
     setShowSplash(false);
   }
 
-  // ── Data — persisted in sessionStorage so F5 keeps uploaded files ────────
+  // ── Data — persisted in localStorage so datos sobreviven al cerrar la pestaña
   const [datasets, setDatasets] = useState<Dataset[]>(() => {
     try {
-      const raw = sessionStorage.getItem(SS.datasets);
+      const raw = localStorage.getItem(LS.datasets);
       if (raw) {
         const parsed = JSON.parse(raw) as Array<{ id: string; name: string; calls: CallRecord[]; loadedAt: string; source: Dataset['source'] }>;
         const restored = parsed.filter((d) => d.id !== 'demo').map((d) => ({ ...d, loadedAt: new Date(d.loadedAt) }));
@@ -103,7 +103,7 @@ function App() {
     return [DEMO_DATASET];
   });
 
-  const [activeDatasetId, setActiveDatasetId] = useState<string>(() => sessionStorage.getItem(SS.activeDataset) ?? 'demo');
+  const [activeDatasetId, setActiveDatasetId] = useState<string>(() => localStorage.getItem(LS.activeDataset) ?? 'demo');
   const [compareId, setCompareId]             = useState<string | null>(null);
   const [apiStatus, setApiStatus]             = useState<'checking' | 'online' | 'offline'>('checking');
 
@@ -245,20 +245,22 @@ function App() {
     return () => { mounted = false; };
   }, []);
 
-  // Persist uploaded datasets across F5 refreshes
+  // Persist uploaded datasets in localStorage (survives tab close + browser restart)
   useEffect(() => {
     const toSave = datasets.filter((d) => d.id !== 'demo');
     try {
       if (toSave.length > 0) {
-        sessionStorage.setItem(SS.datasets, JSON.stringify(toSave));
+        localStorage.setItem(LS.datasets, JSON.stringify(toSave));
       } else {
-        sessionStorage.removeItem(SS.datasets);
+        localStorage.removeItem(LS.datasets);
       }
-    } catch { /* quota exceeded — ignore */ }
+    } catch {
+      toast.warning('Almacenamiento lleno — el archivo se perdería al cerrar. Exporta un Excel primero.');
+    }
   }, [datasets]);
 
   useEffect(() => {
-    sessionStorage.setItem(SS.activeDataset, activeDatasetId);
+    localStorage.setItem(LS.activeDataset, activeDatasetId);
   }, [activeDatasetId]);
 
   function addDataset(dataset: Dataset) {

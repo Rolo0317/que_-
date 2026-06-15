@@ -10,10 +10,11 @@ export const LS = {
   reportCharts:   'que-report-charts',
   reportLayout:   'que-report-layout',
   chartType:      (id: string) => `que-ct-${id}`,
+  datasets:       'que-datasets',
+  activeDataset:  'que-active-dataset',
 } as const;
 
+// sessionStorage: solo persiste mientras la pestaña está abierta
 export const SS = {
-  splash:        'wc-splash-shown',
-  datasets:      'que-datasets',
-  activeDataset: 'que-active-dataset',
+  splash: 'wc-splash-shown',
 } as const;
