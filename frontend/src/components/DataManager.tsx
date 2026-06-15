@@ -47,7 +47,7 @@ const EXPECTED_COLUMNS = [
   'login_sec',
 ];
 
-const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_FILE_BYTES = 15 * 1024 * 1024;
 
 interface DataManagerProps {
   datasets: Dataset[];
@@ -280,7 +280,7 @@ export function DataManager({ datasets, activeId, onActivate, onDelete, onUpload
           {isDragging ? 'Suelta el archivo aquí' : 'Arrastra un .xlsx aquí o usa el botón Cargar Excel'}
         </p>
         <p className="mt-1 text-xs text-slate-400 dark:text-white/25">
-          Formato .xlsx · Máximo 5 MB
+          Formato .xlsx · Máximo 15 MB
         </p>
 
         {/* Download template */}

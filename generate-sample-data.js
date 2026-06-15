@@ -65,7 +65,7 @@ function getWorkdays(from, to) {
   }
   return days;
 }
-const WORKDAYS = getWorkdays('2026-04-01', '2026-06-13');
+const WORKDAYS = getWorkdays('2026-04-14', '2026-06-13');
 
 // ─── Utilidades ───────────────────────────────────────────────────────────────
 let seq = 1000000;
@@ -157,8 +157,8 @@ for (const date of WORKDAYS) {
     const transT = vary(agent.transRate / mood, 0.05);
     const abanT  = vary(agent.abanRate, 0.04);
 
-    // Cantidad de llamadas: inbound 5-12, outbound 18-35
-    const nCalls = isIN ? irnd(5, 12) : irnd(18, 35);
+    // Cantidad de llamadas: inbound 5-10, outbound 10-20
+    const nCalls = isIN ? irnd(5, 10) : irnd(10, 20);
 
     for (let c = 0; c < nCalls; c++) {
       const campaign = isIN ? pick(INBOUND_CAMPAIGNS) : pick(OUTBOUND_CAMPAIGNS);
