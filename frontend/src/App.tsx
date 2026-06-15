@@ -1,60 +1,54 @@
-import { BarChart3, Database, Headphones, RefreshCw, ShieldCheck, TrendingUp, Users } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { BarChart3, RefreshCw, Settings } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Navigate, NavLink, Route, Routes, useLocation, useSearchParams } from 'react-router-dom';
 import { AgentView } from './components/AgentView';
 import { BrandLogo } from './components/BrandLogo';
+import { CalidadView } from './components/CalidadView';
 import { CompareView } from './components/CompareView';
 import { DataManager } from './components/DataManager';
 import { DashboardFooter } from './components/DashboardFooter';
 import { FileUploader } from './components/FileUploader';
-import { KpiCard } from './components/KpiCard';
-import type { KpiStatus } from './components/KpiCard';
-import { ReportBuilder } from './components/ReportBuilder';
-import type { ChartId, ReportLayout } from './components/ReportBuilder';
+import { OperacionesView } from './components/OperacionesView';
 import { PeriodPicker } from './components/PeriodPicker';
 import { ThemeToggle } from './components/ThemeToggle';
+import { ThresholdConfig } from './components/ThresholdConfig';
+import { ToastContainer } from './components/ToastContainer';
+import { WfmView } from './components/WfmView';
+import { WorldCupSplash } from './components/WorldCupSplash';
+import { MODULES } from './config/modules';
 import { sampleCalls } from './data/sampleCalls';
 import { fetchHealth, fetchReport, uploadReport } from './lib/api';
 import { parseExcelFile } from './lib/excel';
 import {
-  abandonByHour,
-  agentDetailStats,
-  agentScores,
-  calculateMetrics,
-  callsByHour,
-  callsByQueue,
-  callsByType,
-  filterCalls,
-  slaByHour,
+  abandonByHour, agentDetailStats, agentScores, calculateMetrics,
+  callsByHour, callsByQueue, callsByType, filterCalls, slaByHour,
 } from './lib/metrics';
 import { useKpiAlerts } from './lib/useKpiAlerts';
+import { useThresholds } from './lib/useThresholds';
+import { useToast } from './lib/ToastContext';
+import type { ChartId, ReportLayout } from './components/ReportBuilder';
+import type { CallRecord } from './types/calls';
 import type { Dataset } from './types/dataset';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 const typeFilters = ['Todos', 'Inbound', 'Outbound'] as const;
 type TypeFilter = (typeof typeFilters)[number];
 type Period = 'todos' | 'dia' | 'mes' | 'año';
-type Module = 'wfm' | 'operaciones' | 'calidad' | 'agentes' | 'archivos';
 
-// ─── Lazy chart components ────────────────────────────────────────────────────
-const HourlyChart      = lazy(() => import('./components/Charts').then((m) => ({ default: m.HourlyChart })));
-const TypeMixChart     = lazy(() => import('./components/Charts').then((m) => ({ default: m.TypeMixChart })));
-const AgentScoreChart  = lazy(() => import('./components/Charts').then((m) => ({ default: m.AgentScoreChart })));
-const SlaHourChart     = lazy(() => import('./components/Charts').then((m) => ({ default: m.SlaHourChart })));
-const AbandonHourChart = lazy(() => import('./components/Charts').then((m) => ({ default: m.AbandonHourChart })));
-const QueueChart       = lazy(() => import('./components/Charts').then((m) => ({ default: m.QueueChart })));
+const DEMO_DATASET: Dataset = {
+  id: 'demo',
+  name: 'Datos de muestra',
+  calls: sampleCalls,
+  loadedAt: new Date(),
+  source: 'demo',
+};
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-const fmt  = (v: number) => `${(v * 100).toFixed(2)}%`;
-const fmtS = (s: number) => `${Math.round(s)} s`;
-const pct    = (v: number, g: number, w: number): KpiStatus => v >= g ? 'good' : v >= w ? 'warning' : 'bad';
-const pctInv = (v: number, g: number, w: number): KpiStatus => v <= g ? 'good' : v <= w ? 'warning' : 'bad';
-const secInv = (v: number, g: number, w: number): KpiStatus => v <= g ? 'good' : v <= w ? 'warning' : 'bad';
-const occupancy = (v: number): KpiStatus =>
-  v >= 0.75 && v <= 0.90 ? 'good' : v >= 0.60 ? 'warning' : 'bad';
+function splashKey() {
+  return `wc-splash-shown-${new Date().toISOString().slice(0, 10)}`;
+}
 
 // ─── Period filter ────────────────────────────────────────────────────────────
-import type { CallRecord } from './types/calls';
 function filterByPeriod(calls: CallRecord[], period: Period, value: string): CallRecord[] {
   if (period === 'todos' || !value) return calls;
   return calls.filter((c) => {
@@ -66,53 +60,34 @@ function filterByPeriod(calls: CallRecord[], period: Period, value: string): Cal
   });
 }
 
-// ─── Module config ────────────────────────────────────────────────────────────
-const modules: { id: Module; label: string; icon: typeof Users; abbr: string }[] = [
-  { id: 'wfm',         label: 'WFM',        icon: Users,       abbr: 'WFM' },
-  { id: 'operaciones', label: 'Operaciones', icon: TrendingUp,  abbr: 'OPS' },
-  { id: 'calidad',     label: 'Calidad',     icon: ShieldCheck, abbr: 'QA' },
-  { id: 'agentes',     label: 'Agentes',     icon: Headphones,  abbr: 'AGT' },
-  { id: 'archivos',    label: 'Archivos',    icon: Database,    abbr: 'DAT' },
-];
-
-const DEMO_DATASET: Dataset = {
-  id: 'demo',
-  name: 'Datos de muestra',
-  calls: sampleCalls,
-  loadedAt: new Date(),
-  source: 'demo',
-};
-
-const ChartSkeleton = () => (
-  <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-panel dark:border-white/10 dark:bg-white/10">
-    <div className="h-72 animate-pulse rounded-md bg-slate-100 dark:bg-white/5" />
-  </div>
-);
-
 // ─── App ──────────────────────────────────────────────────────────────────────
 function App() {
   const shouldReduceMotion = useReducedMotion();
+  const toast = useToast();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { thresholds, update: updateThresholds, reset: resetThresholds } = useThresholds();
+  const isAgentes  = location.pathname === '/agentes';
+  const isArchivos = location.pathname === '/archivos';
 
-  // Data
+  // ── Splash ───────────────────────────────────────────────────────────────
+  const [showSplash, setShowSplash] = useState(() => !localStorage.getItem(splashKey()));
+  function closeSplash() {
+    localStorage.setItem(splashKey(), '1');
+    setShowSplash(false);
+  }
+
+  // ── Data ─────────────────────────────────────────────────────────────────
   const [datasets, setDatasets]               = useState<Dataset[]>([DEMO_DATASET]);
   const [activeDatasetId, setActiveDatasetId] = useState<string>('demo');
+  const [compareId, setCompareId]             = useState<string | null>(null);
+  const [apiStatus, setApiStatus]             = useState<'checking' | 'online' | 'offline'>('checking');
 
-  // Filters
-  const [typeFilter, setTypeFilter]   = useState<TypeFilter>('Todos');
-  const [period, setPeriod]           = useState<Period>('todos');
-  const [periodValue, setPeriodValue] = useState<string>('');
-
-  // UI
-  const [activeModule, setActiveModule]     = useState<Module>('wfm');
-  const [compareId, setCompareId]           = useState<string | null>(null);
-  const [selectedCharts, setSelectedCharts] = useState<ChartId[]>(['hourly', 'mix', 'scores']);
-  const [layout, setLayout]                 = useState<ReportLayout>('2');
-  const [apiStatus, setApiStatus]           = useState<'checking' | 'online' | 'offline'>('checking');
-  const [theme, setTheme]                   = useState<'light' | 'dark'>(() => {
-    if (typeof window === 'undefined') return 'light';
+  // ── Theme ────────────────────────────────────────────────────────────────
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('theme-preference') as 'light' | 'dark' | null;
     if (saved) return saved;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
   useEffect(() => {
@@ -120,17 +95,37 @@ function App() {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
-  // Reset period value when period type changes
-  useEffect(() => { setPeriodValue(''); }, [period]);
+  // ── Filters from URL ─────────────────────────────────────────────────────
+  const typeFilter  = (searchParams.get('type')   ?? 'Todos') as TypeFilter;
+  const period      = (searchParams.get('period') ?? 'todos') as Period;
+  const periodValue = searchParams.get('pv') ?? '';
 
-  // ─── Derived ───────────────────────────────────────────────────────────────
+  function setTypeFilter(v: TypeFilter) {
+    setSearchParams((p) => { v === 'Todos' ? p.delete('type') : p.set('type', v); return p; }, { replace: true });
+  }
+  function setPeriod(v: Period) {
+    setSearchParams((p) => {
+      v === 'todos' ? p.delete('period') : p.set('period', v);
+      p.delete('pv');
+      return p;
+    }, { replace: true });
+  }
+  function setPeriodValue(v: string) {
+    setSearchParams((p) => { v ? p.set('pv', v) : p.delete('pv'); return p; }, { replace: true });
+  }
+
+  // ── Report builder state ─────────────────────────────────────────────────
+  const [selectedCharts, setSelectedCharts] = useState<ChartId[]>(['hourly', 'mix', 'scores']);
+  const [layout, setLayout]                 = useState<ReportLayout>('2');
+  const [showThresholds, setShowThresholds] = useState(false);
+
+  // ── Derived ──────────────────────────────────────────────────────────────
   const activeDataset = useMemo(
     () => datasets.find((d) => d.id === activeDatasetId) ?? DEMO_DATASET,
     [datasets, activeDatasetId],
   );
-  const activeCalls  = useMemo(() => activeDataset.calls, [activeDataset]);
+  const activeCalls = useMemo(() => activeDataset.calls, [activeDataset]);
 
-  // Available period values in current dataset
   const availableDays   = useMemo(() => [...new Set(activeCalls.map((c) => c.date).filter(Boolean))].sort().reverse() as string[], [activeCalls]);
   const availableMonths = useMemo(() => [...new Set(activeCalls.map((c) => c.date?.slice(0, 7)).filter(Boolean))].sort().reverse() as string[], [activeCalls]);
   const availableYears  = useMemo(() => [...new Set(activeCalls.map((c) => c.date?.slice(0, 4)).filter(Boolean))].sort().reverse() as string[], [activeCalls]);
@@ -139,47 +134,21 @@ function App() {
   const periodCalls  = useMemo(() => filterByPeriod(activeCalls, period, periodValue), [activeCalls, period, periodValue]);
   const visibleCalls = useMemo(() => filterCalls(periodCalls, typeFilter), [periodCalls, typeFilter]);
   const metrics      = useMemo(() => calculateMetrics(visibleCalls), [visibleCalls]);
-  const hourlyData   = useMemo(() => callsByHour(visibleCalls), [visibleCalls]);
-  const typeData     = useMemo(() => callsByType(visibleCalls), [visibleCalls]);
-  const scoreData    = useMemo(() => agentScores(visibleCalls), [visibleCalls]);
-  const slaData      = useMemo(() => slaByHour(visibleCalls), [visibleCalls]);
-  const abandonData  = useMemo(() => abandonByHour(visibleCalls), [visibleCalls]);
-  const queueData    = useMemo(() => callsByQueue(visibleCalls), [visibleCalls]);
-  const agentCount   = useMemo(() => new Set(visibleCalls.map((c) => c.agent)).size, [visibleCalls]);
-  const agentStats   = useMemo(() => agentDetailStats(visibleCalls), [visibleCalls]);
-  const kpiAlerts    = useKpiAlerts(visibleCalls);
 
-  // ─── KPI arrays ────────────────────────────────────────────────────────────
-  const wfmKpis = useMemo(() => [
-    { label: 'Ocupacion',   value: fmt(metrics.occupancy),   helper: 'Talk / disponible',    target: 'Meta: 80–85%', status: occupancy(metrics.occupancy) },
-    { label: 'Utilizacion', value: fmt(metrics.utilization), helper: 'Productivo / login',   target: 'Meta: >85%',   status: pct(metrics.utilization, 0.85, 0.75) },
-    { label: 'Shrinkage',   value: fmt(metrics.shrinkage),   helper: 'Fuera de produccion',  target: 'Meta: <25%',   status: pctInv(metrics.shrinkage, 0.25, 0.35) },
-    { label: 'Adherencia',  value: fmt(metrics.adherence),   helper: 'Horario plan vs real',  target: 'Meta: >95%',  status: pct(metrics.adherence, 0.95, 0.90) },
-    { label: 'Asistencia',  value: fmt(metrics.attendance),  helper: 'Presencia programada',  target: 'Meta: >95%',  status: pct(metrics.attendance, 0.95, 0.90) },
-  ], [metrics]);
+  const hourlyData  = useMemo(() => callsByHour(visibleCalls),   [visibleCalls]);
+  const typeData    = useMemo(() => callsByType(visibleCalls),    [visibleCalls]);
+  const scoreData   = useMemo(() => agentScores(visibleCalls),   [visibleCalls]);
+  const slaData     = useMemo(() => slaByHour(visibleCalls),     [visibleCalls]);
+  const abandonData = useMemo(() => abandonByHour(visibleCalls), [visibleCalls]);
+  const queueData   = useMemo(() => callsByQueue(visibleCalls),  [visibleCalls]);
+  const agentCount  = useMemo(() => new Set(visibleCalls.map((c) => c.agent)).size, [visibleCalls]);
+  const agentStats  = useMemo(() => agentDetailStats(visibleCalls), [visibleCalls]);
+  const kpiAlerts   = useKpiAlerts(visibleCalls);
 
-  const operacionesKpis = useMemo(() => [
-    { label: 'Total llamadas', value: metrics.total,                       helper: 'Registros filtrados',  status: 'neutral' as KpiStatus },
-    { label: 'Inbound',        value: metrics.inbound,                     helper: 'Entrantes',            status: 'neutral' as KpiStatus },
-    { label: 'Outbound',       value: metrics.outbound,                    helper: 'Salientes',            status: 'neutral' as KpiStatus },
-    { label: 'SLA',            value: fmt(metrics.serviceLevel),           helper: 'Contestadas a tiempo', target: 'Meta: >80%',  status: pct(metrics.serviceLevel, 0.80, 0.70) },
-    { label: 'Abandono',       value: fmt(metrics.abandonRate),            helper: 'Sobre total',          target: 'Meta: <5%',   status: pctInv(metrics.abandonRate, 0.05, 0.10) },
-    { label: 'ASA',            value: fmtS(metrics.avgSpeedAnswer),        helper: 'Espera promedio',      target: 'Meta: <30 s', status: secInv(metrics.avgSpeedAnswer, 30, 60) },
-    { label: 'AHT / TMO',      value: fmtS(metrics.avgDuration),          helper: 'Duracion media',        status: 'neutral' as KpiStatus },
-  ], [metrics]);
+  const statusText = `${activeDataset.name} · ${visibleCalls.length} de ${activeCalls.length} registros`;
+  const fmt = (v: number) => `${(v * 100).toFixed(2)}%`;
 
-  const calidadKpis = useMemo(() => [
-    { label: 'FCR',            value: fmt(metrics.firstContactResolution), helper: 'Resuelto primer contacto', target: 'Meta: >80%',  status: pct(metrics.firstContactResolution, 0.80, 0.70) },
-    { label: 'Transferencias', value: fmt(metrics.transferRate),           helper: 'Derivaciones',             target: 'Meta: <10%', status: pctInv(metrics.transferRate, 0.10, 0.20) },
-    { label: 'QA Score',       value: metrics.avgQaScore.toFixed(1),       helper: 'Calidad (0–100)',           target: 'Meta: >85',   status: pct(metrics.avgQaScore / 100, 0.85, 0.75) },
-    { label: 'Satisfaccion',   value: metrics.avgScore.toFixed(2),         helper: 'Escala 1 a 5',             target: 'Meta: >4.0',  status: pct(metrics.avgScore / 5, 0.80, 0.70) },
-  ], [metrics]);
-
-  const activeKpis = activeModule === 'wfm' ? wfmKpis
-    : activeModule === 'operaciones' ? operacionesKpis
-    : calidadKpis;
-
-  // ─── API ───────────────────────────────────────────────────────────────────
+  // ── API ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     let mounted = true;
     fetchHealth()
@@ -189,17 +158,16 @@ function App() {
   }, []);
 
   function addDataset(dataset: Dataset) {
-    setDatasets((prev) => [...prev, dataset]);
+    setDatasets((p) => [...p, dataset]);
     setActiveDatasetId(dataset.id);
   }
 
   function deleteDataset(id: string) {
-    setDatasets((prev) => prev.filter((d) => d.id !== id));
+    setDatasets((p) => p.filter((d) => d.id !== id));
     if (activeDatasetId === id) setActiveDatasetId('demo');
   }
 
   async function handleFile(file: File) {
-    // Skip API attempt when already known offline or unreachable
     const tryApi = apiStatus !== 'offline' && navigator.onLine;
     if (tryApi) {
       try {
@@ -210,36 +178,40 @@ function App() {
         const report = await uploadReport(file, typeFilter);
         addDataset({ id: `api-${Date.now()}`, name: file.name.replace(/\.xlsx$/i, ''), calls: report.data, loadedAt: new Date(), source: 'api' });
         setApiStatus('online');
+        toast.success(`Dataset "${file.name.replace(/\.xlsx$/i, '')}" cargado desde API`);
         return;
       } catch {
         setApiStatus('offline');
+        toast.warning('Backend offline — usando parser local');
       }
     }
-    // Parser local
     const rows = await parseExcelFile(file);
     if (rows.length === 0) throw new Error('El archivo está vacío o no tiene filas de datos.');
     const allDefault = rows.every((r) => r.agent === 'Sin agente') || rows.every((r) => r.hour === 'Sin hora');
     if (allDefault) throw new Error(`${rows.length} filas cargadas pero los encabezados no coinciden.`);
-    addDataset({ id: `excel-${Date.now()}`, name: file.name.replace(/\.xlsx$/i, ''), calls: rows, loadedAt: new Date(), source: 'excel' });
+    const name = file.name.replace(/\.xlsx$/i, '');
+    addDataset({ id: `excel-${Date.now()}`, name, calls: rows, loadedAt: new Date(), source: 'excel' });
+    toast.success(`"${name}" cargado · ${rows.length} registros`);
   }
 
   async function loadApiData() {
     try {
       const report = await fetchReport(typeFilter);
-      addDataset({
-        id: `api-${Date.now()}`,
-        name: `API ${new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}`,
-        calls: report.data,
-        loadedAt: new Date(),
-        source: 'api',
-      });
-    } catch { /* API offline — pill lo muestra */ }
+      const name = `API ${new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}`;
+      addDataset({ id: `api-${Date.now()}`, name, calls: report.data, loadedAt: new Date(), source: 'api' });
+      toast.success(`Dataset API cargado · ${report.data.length} registros`);
+    } catch {
+      toast.error('No se pudo conectar al backend');
+    }
   }
 
-  const gridClass = layout === '3' ? 'grid gap-6 md:grid-cols-2 xl:grid-cols-3' : 'grid gap-6 xl:grid-cols-2';
-  const isAnalytics = activeModule === 'wfm' || activeModule === 'operaciones' || activeModule === 'calidad';
-  const statusText = `${activeDataset.name} · ${visibleCalls.length} de ${activeCalls.length} registros`;
-
+  // ── Shared props for view components ─────────────────────────────────────
+  const sharedChartProps = {
+    selectedCharts,
+    onChartsChange: setSelectedCharts,
+    layout,
+    onLayoutChange: setLayout,
+  };
 
   return (
     <div className={theme === 'dark' ? 'dark' : ''}>
@@ -249,6 +221,11 @@ function App() {
         <img src="/logo-que-plus.svg" alt="" aria-hidden="true"
           className="pointer-events-none absolute right-[-64px] top-8 hidden w-[360px] opacity-[0.04] dark:opacity-[0.07] xl:block" />
 
+        {/* Splash Mundial */}
+        <AnimatePresence>
+          {showSplash && <WorldCupSplash onClose={closeSplash} />}
+        </AnimatePresence>
+
         {/* ── Sidebar ── */}
         <aside className="fixed inset-y-0 left-0 z-30 hidden w-20 flex-col items-center gap-3 bg-ink py-6 text-white lg:flex">
           <div className="flex flex-col items-center gap-1">
@@ -256,24 +233,30 @@ function App() {
             <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/40">BPO</span>
           </div>
           <div className="h-px w-10 bg-white/10" />
-          {modules.map(({ id, label, icon: Icon, abbr }) => {
-            const active = activeModule === id;
+
+          {MODULES.map(({ id, path, label, icon: Icon, abbr, kpiAlertKey }) => {
+            const hasAlert = kpiAlertKey ? kpiAlerts[kpiAlertKey] : false;
             return (
-              <button
+              <NavLink
                 key={id}
-                type="button"
+                to={path}
                 title={label}
                 aria-label={label}
-                onClick={() => setActiveModule(id)}
-                className={`flex flex-col items-center gap-1 rounded-xl px-2 py-2.5 transition-all ${
-                  active ? 'bg-que-teal/20 text-que-teal' : 'text-white/40 hover:bg-white/5 hover:text-white'
-                }`}
+                className={({ isActive }) =>
+                  `relative flex flex-col items-center gap-1 rounded-xl px-2 py-2.5 transition-all ${
+                    isActive ? 'bg-que-teal/20 text-que-teal' : 'text-white/40 hover:bg-white/5 hover:text-white'
+                  }`
+                }
               >
                 <Icon size={18} aria-hidden="true" />
                 <span className="text-[8px] font-bold uppercase tracking-wider">{abbr}</span>
-              </button>
+                {hasAlert && (
+                  <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rose-500" aria-label="KPI en rojo" />
+                )}
+              </NavLink>
             );
           })}
+
           <div className="h-px w-10 bg-white/10" />
           <button
             type="button"
@@ -285,6 +268,7 @@ function App() {
             <BarChart3 size={18} aria-hidden="true" />
             <span className="text-[8px] font-bold uppercase tracking-wider">REP</span>
           </button>
+
           <div className="mt-auto">
             <div className="mb-4 h-px w-10 bg-white/10" />
             <img src="/logo-que-plus.svg" alt="" aria-hidden="true" className="w-8 opacity-10" />
@@ -319,6 +303,19 @@ function App() {
               <ThemeToggle theme={theme} onToggle={() => setTheme(theme === 'dark' ? 'light' : 'dark')} />
               <button
                 type="button"
+                onClick={() => setShowThresholds((v) => !v)}
+                title="Configurar umbrales"
+                className={`flex h-10 items-center gap-2 rounded-md border px-3 text-sm font-medium shadow-sm transition ${
+                  showThresholds
+                    ? 'border-que-teal bg-que-teal/10 text-que-teal'
+                    : 'border-slate-300 bg-white text-ink hover:border-que-teal dark:border-white/10 dark:bg-slate-900 dark:text-white'
+                }`}
+              >
+                <Settings size={15} aria-hidden="true" />
+                <span className="hidden sm:inline">Umbrales</span>
+              </button>
+              <button
+                type="button"
                 onClick={loadApiData}
                 aria-label="Sincronizar desde API"
                 className="flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-ink shadow-sm transition hover:border-que-teal dark:border-white/10 dark:bg-slate-900 dark:text-white"
@@ -330,46 +327,67 @@ function App() {
             </div>
           </motion.header>
 
+          {/* Threshold config panel */}
+          <AnimatePresence>
+            {showThresholds && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="mt-4"
+                data-no-print
+              >
+                <ThresholdConfig
+                  thresholds={thresholds}
+                  onUpdate={updateThresholds}
+                  onReset={resetThresholds}
+                  onClose={() => setShowThresholds(false)}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Module tabs */}
           <div className="mt-5 overflow-x-auto pb-1" data-no-print>
             <div className="flex w-max items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-white/10 dark:bg-slate-900">
-              {modules.map(({ id, label, icon: Icon }) => {
-                const active = activeModule === id;
-                const hasAlert =
-                  (id === 'wfm' && kpiAlerts.wfm) ||
-                  (id === 'operaciones' && kpiAlerts.operaciones) ||
-                  (id === 'calidad' && kpiAlerts.calidad);
+              {MODULES.map(({ id, path, label, icon: Icon, kpiAlertKey }) => {
+                const hasAlert = kpiAlertKey ? kpiAlerts[kpiAlertKey] : false;
                 return (
-                  <button
+                  <NavLink
                     key={id}
-                    type="button"
-                    onClick={() => setActiveModule(id)}
-                    className={`relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition-all ${
-                      active ? 'bg-ink text-white shadow dark:bg-que-teal' : 'text-slate-500 hover:text-ink dark:text-white/50 dark:hover:text-white'
-                    }`}
+                    to={path}
+                    className={({ isActive }) =>
+                      `relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition-all ${
+                        isActive ? 'bg-ink text-white shadow dark:bg-que-teal' : 'text-slate-500 hover:text-ink dark:text-white/50 dark:hover:text-white'
+                      }`
+                    }
                   >
-                    <Icon size={14} aria-hidden="true" />
-                    {label}
-                    {id === 'archivos' && datasets.length > 1 && (
-                      <span className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
-                        active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-white/40'
-                      }`}>
-                        {datasets.length}
-                      </span>
+                    {({ isActive }) => (
+                      <>
+                        <Icon size={14} aria-hidden="true" />
+                        {label}
+                        {id === 'archivos' && datasets.length > 1 && (
+                          <span className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                            isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-white/40'
+                          }`}>
+                            {datasets.length}
+                          </span>
+                        )}
+                        {hasAlert && !isActive && (
+                          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500" aria-label="KPI en rojo" />
+                        )}
+                      </>
                     )}
-                    {hasAlert && !active && (
-                      <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500" aria-label="KPI en rojo" />
-                    )}
-                  </button>
+                  </NavLink>
                 );
               })}
             </div>
           </div>
 
-          {/* Filters row — visible in analytics + agentes */}
-          {activeModule !== 'archivos' && (
+          {/* Filters row */}
+          {!isArchivos && (
             <div className="mt-3 flex flex-wrap items-center gap-2" data-no-print>
-              {/* Type filter */}
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
@@ -379,7 +397,6 @@ function App() {
                 {typeFilters.map((f) => <option key={f}>{f}</option>)}
               </select>
 
-              {/* Period type */}
               <select
                 value={period}
                 onChange={(e) => setPeriod(e.target.value as Period)}
@@ -404,134 +421,113 @@ function App() {
                 />
               )}
 
-              {/* Active filter indicator */}
-              {(period !== 'todos' && periodValue) && (
+              {period !== 'todos' && periodValue && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-que-teal/10 px-3 py-1 text-xs font-semibold text-que-teal">
                   {period === 'dia' ? 'Día' : period === 'mes' ? 'Mes' : 'Año'}: {periodValue}
                   <button type="button" onClick={() => setPeriodValue('')} className="ml-0.5 hover:text-ink">×</button>
                 </span>
               )}
 
-              <span className="text-xs text-slate-400 dark:text-white/30">
-                {visibleCalls.length} registros
-              </span>
+              <span className="text-xs text-slate-400 dark:text-white/30">{visibleCalls.length} registros</span>
             </div>
           )}
 
-          {/* ═══ ARCHIVOS ═══════════════════════════════════════════════════════ */}
-          {activeModule === 'archivos' && (
-            <motion.div key="archivos" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="mt-6 space-y-6">
-              <DataManager
-                datasets={datasets}
-                activeId={activeDatasetId}
-                onActivate={setActiveDatasetId}
-                onDelete={(id) => { deleteDataset(id); if (compareId === id) setCompareId(null); }}
-                onUpload={handleFile}
-              />
-              {/* Compare selector — solo si hay 2+ datasets */}
-              {datasets.length >= 2 && (
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-panel dark:border-white/10 dark:bg-slate-900">
-                  <h3 className="mb-3 text-sm font-bold text-ink dark:text-white">Comparar datasets</h3>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-white/50">
-                      <span className="h-2.5 w-2.5 rounded-full bg-que-teal flex-shrink-0" />
-                      {activeDataset.name}
-                      <span className="text-slate-300 dark:text-white/20">vs</span>
+          {/* ── Routes ── */}
+          <Routes>
+            <Route path="/" element={<Navigate to="/operaciones" replace />} />
+
+            <Route
+              path="/wfm"
+              element={
+                <motion.div key="wfm" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                  <WfmView calls={visibleCalls} thresholds={thresholds} {...sharedChartProps} queueData={queueData} />
+                </motion.div>
+              }
+            />
+
+            <Route
+              path="/operaciones"
+              element={
+                <motion.div key="operaciones" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                  <OperacionesView
+                    calls={visibleCalls} thresholds={thresholds} {...sharedChartProps}
+                    hourlyData={hourlyData} typeData={typeData} slaData={slaData} abandonData={abandonData}
+                  />
+                </motion.div>
+              }
+            />
+
+            <Route
+              path="/calidad"
+              element={
+                <motion.div key="calidad" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                  <CalidadView calls={visibleCalls} thresholds={thresholds} {...sharedChartProps} scoreData={scoreData} />
+                </motion.div>
+              }
+            />
+
+            <Route
+              path="/agentes"
+              element={
+                <motion.div key="agentes" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+                  <AgentView stats={agentStats} />
+                </motion.div>
+              }
+            />
+
+            <Route
+              path="/archivos"
+              element={
+                <motion.div key="archivos" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="mt-6 space-y-6">
+                  <DataManager
+                    datasets={datasets}
+                    activeId={activeDatasetId}
+                    onActivate={setActiveDatasetId}
+                    onDelete={(id) => { deleteDataset(id); if (compareId === id) setCompareId(null); }}
+                    onUpload={handleFile}
+                  />
+                  {datasets.length >= 2 && (
+                    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-panel dark:border-white/10 dark:bg-slate-900">
+                      <h3 className="mb-3 text-sm font-bold text-ink dark:text-white">Comparar datasets</h3>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-white/50">
+                          <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full bg-que-teal" />
+                          {activeDataset.name}
+                          <span className="text-slate-300 dark:text-white/20">vs</span>
+                        </div>
+                        <select
+                          value={compareId ?? ''}
+                          onChange={(e) => setCompareId(e.target.value || null)}
+                          className="h-9 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-ink shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                        >
+                          <option value="">— Seleccionar dataset —</option>
+                          {datasets.filter((d) => d.id !== activeDatasetId).map((d) => (
+                            <option key={d.id} value={d.id}>{d.name}</option>
+                          ))}
+                        </select>
+                        {compareId && (
+                          <button type="button" onClick={() => setCompareId(null)} className="text-xs text-slate-400 hover:text-rose-500">
+                            × Cerrar
+                          </button>
+                        )}
+                      </div>
+                      {compareId && (() => {
+                        const dsB = datasets.find((d) => d.id === compareId);
+                        return dsB ? <CompareView datasetA={activeDataset} datasetB={dsB} onClose={() => setCompareId(null)} /> : null;
+                      })()}
                     </div>
-                    <select
-                      value={compareId ?? ''}
-                      onChange={(e) => setCompareId(e.target.value || null)}
-                      className="h-9 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-ink shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-white"
-                    >
-                      <option value="">— Seleccionar dataset —</option>
-                      {datasets.filter((d) => d.id !== activeDatasetId).map((d) => (
-                        <option key={d.id} value={d.id}>{d.name}</option>
-                      ))}
-                    </select>
-                    {compareId && (
-                      <button type="button" onClick={() => setCompareId(null)} className="text-xs text-slate-400 hover:text-rose-500">
-                        × Cerrar
-                      </button>
-                    )}
-                  </div>
-                  {compareId && (() => {
-                    const dsB = datasets.find((d) => d.id === compareId);
-                    return dsB ? (
-                      <CompareView datasetA={activeDataset} datasetB={dsB} onClose={() => setCompareId(null)} />
-                    ) : null;
-                  })()}
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* ═══ AGENTES ════════════════════════════════════════════════════════ */}
-          {activeModule === 'agentes' && (
-            <motion.div key="agentes" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="mt-6">
-              <AgentView stats={agentStats} />
-            </motion.div>
-          )}
-
-          {/* ═══ ANALYTICS (WFM / OPS / CALIDAD) ═══════════════════════════════ */}
-          {isAnalytics && (
-            <motion.div key={activeModule} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-              {/* Description */}
-              <div className="mt-2 mb-5" data-no-print>
-                {activeModule === 'wfm'         && <p className="text-xs text-slate-500 dark:text-white/50">Fuerza laboral — ocupacion, utilizacion, shrinkage, adherencia y asistencia.</p>}
-                {activeModule === 'operaciones' && <p className="text-xs text-slate-500 dark:text-white/50">Volumen y servicio — llamadas, SLA, abandono, velocidad de respuesta y duracion.</p>}
-                {activeModule === 'calidad'     && <p className="text-xs text-slate-500 dark:text-white/50">Calidad — FCR, transferencias, QA score y satisfaccion del cliente.</p>}
-              </div>
-
-              {/* KPI cards */}
-              <section id="kpi-section" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {activeKpis.map((kpi, i) => (
-                  <KpiCard key={kpi.label} label={kpi.label} value={kpi.value} helper={kpi.helper}
-                    target={kpi.target} status={kpi.status} index={i} />
-                ))}
-              </section>
-
-              {/* Legend */}
-              <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-white/50" data-no-print>
-                <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Cumple meta</span>
-                <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-400" /> En riesgo</span>
-                <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-rose-500" /> Fuera de meta</span>
-                <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-que-teal" /> Referencial</span>
-              </div>
-
-              {/* Report builder */}
-              <div id="report-builder" className="mt-8" data-no-print>
-                <ReportBuilder selected={selectedCharts} onChange={setSelectedCharts} layout={layout} onLayoutChange={setLayout} />
-              </div>
-
-              {/* Chart grid */}
-              <section className={`mt-6 ${gridClass}`}>
-                <Suspense fallback={<ChartSkeleton />}>
-                  {selectedCharts.length === 0 ? (
-                    <div className="col-span-full flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white py-16 text-center dark:border-white/10 dark:bg-white/5">
-                      <BarChart3 size={40} className="mb-3 text-slate-300 dark:text-white/20" aria-hidden="true" />
-                      <p className="text-sm font-semibold text-slate-500 dark:text-white/40">Ninguna gráfica seleccionada</p>
-                      <button type="button" onClick={() => setSelectedCharts(['hourly', 'mix', 'scores'])}
-                        className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-ink shadow-sm transition hover:border-que-teal dark:border-white/10 dark:bg-white/10 dark:text-white">
-                        Restaurar por defecto
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      {selectedCharts.includes('hourly')      && <HourlyChart data={hourlyData} />}
-                      {selectedCharts.includes('mix')         && <TypeMixChart data={typeData} />}
-                      {selectedCharts.includes('scores')      && <AgentScoreChart data={scoreData} />}
-                      {selectedCharts.includes('slaHour')     && <SlaHourChart data={slaData} />}
-                      {selectedCharts.includes('abandonHour') && <AbandonHourChart data={abandonData} />}
-                      {selectedCharts.includes('queues')      && <QueueChart data={queueData} />}
-                    </>
                   )}
-                </Suspense>
-              </section>
-            </motion.div>
-          )}
+                </motion.div>
+              }
+            />
+
+            <Route path="*" element={<Navigate to="/operaciones" replace />} />
+          </Routes>
 
           <DashboardFooter totalCalls={metrics.total} agentCount={agentCount} slaPercent={fmt(metrics.serviceLevel)} />
         </main>
+
+        <ToastContainer />
       </div>
     </div>
   );

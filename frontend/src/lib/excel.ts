@@ -73,13 +73,21 @@ export async function parseExcelFile(file: File): Promise<CallRecord[]> {
     }, {}),
   );
 
-  return rows.map((row, index) => {
+  const valid: CallRecord[] = [];
+
+  rows.forEach((row, index) => {
     const normalized = Object.entries(row).reduce<NormalizedRow>((acc, [key, value]) => {
       acc[normalizeKey(key)] = value;
       return acc;
     }, {});
 
-    return {
+    const parseBool = (v: unknown, fallback?: boolean): boolean | undefined => {
+      if (v === undefined || v === null || v === '') return fallback;
+      if (typeof v === 'boolean') return v;
+      return ['true', 'si', 'yes', '1'].includes(String(v).toLowerCase());
+    };
+
+    const raw = {
       id: String(normalized.id || index + 1),
       date: normalized.date ? String(normalized.date) : undefined,
       type: String(normalized.type || 'Inbound'),
@@ -89,31 +97,33 @@ export async function parseExcelFile(file: File): Promise<CallRecord[]> {
       hour: String(normalized.hour || 'Sin hora'),
       durationSeconds: Number(normalized.durationSeconds || 0),
       waitSeconds: Number(normalized.waitSeconds || 0),
-      abandoned: normalized.abandoned === true || String(normalized.abandoned).toLowerCase() === 'true',
-      answeredWithinSla:
-        normalized.answeredWithinSla === true ||
-        ['true', 'si', 'yes', '1'].includes(String(normalized.answeredWithinSla).toLowerCase()),
-      resolvedFirstContact:
-        normalized.resolvedFirstContact === true ||
-        ['true', 'si', 'yes', '1'].includes(String(normalized.resolvedFirstContact).toLowerCase()),
-      transferred:
-        normalized.transferred === true ||
-        ['true', 'si', 'yes', '1'].includes(String(normalized.transferred).toLowerCase()),
+      abandoned: parseBool(normalized.abandoned, false) ?? false,
+      answeredWithinSla: parseBool(normalized.answeredWithinSla),
+      resolvedFirstContact: parseBool(normalized.resolvedFirstContact),
+      transferred: parseBool(normalized.transferred),
       score: Number(normalized.score || 0),
-      qaScore: Number(normalized.qaScore || 0),
-      scheduledSeconds: Number(normalized.scheduledSeconds || 0),
-      loginSeconds: Number(normalized.loginSeconds || 0),
-      productiveSeconds: Number(normalized.productiveSeconds || 0),
-      availableSeconds: Number(normalized.availableSeconds || 0),
-      shrinkageSeconds: Number(normalized.shrinkageSeconds || 0),
-      adherenceSeconds: Number(normalized.adherenceSeconds || 0),
-      scheduled:
-        normalized.scheduled === undefined ||
-        ['true', 'si', 'yes', '1'].includes(String(normalized.scheduled).toLowerCase()),
-      staffed:
-        normalized.staffed === undefined ||
-        ['true', 'si', 'yes', '1'].includes(String(normalized.staffed).toLowerCase()),
+      qaScore: Number(normalized.qaScore || 0) || undefined,
+      scheduledSeconds: Number(normalized.scheduledSeconds || 0) || undefined,
+      loginSeconds: Number(normalized.loginSeconds || 0) || undefined,
+      productiveSeconds: Number(normalized.productiveSeconds || 0) || undefined,
+      availableSeconds: Number(normalized.availableSeconds || 0) || undefined,
+      shrinkageSeconds: Number(normalized.shrinkageSeconds || 0) || undefined,
+      adherenceSeconds: Number(normalized.adherenceSeconds || 0) || undefined,
+      scheduled: normalized.scheduled === undefined ? true : parseBool(normalized.scheduled, true),
+      staffed: normalized.staffed === undefined ? true : parseBool(normalized.staffed, true),
       attendanceStatus: String(normalized.attendanceStatus || 'Presente'),
     };
+
+    // Import schema lazily to avoid adding zod to main bundle
+    import('./schema').then(({ CallRecordSchema }) => {
+      const result = CallRecordSchema.safeParse(raw);
+      if (!result.success) {
+        console.warn(`[Excel] Fila ${index + 1} inválida:`, result.error.flatten().fieldErrors);
+      }
+    }).catch(() => { /* zod optional */ });
+
+    valid.push(raw as CallRecord);
   });
+
+  return valid;
 }
