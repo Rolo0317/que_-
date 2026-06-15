@@ -117,9 +117,10 @@ function App() {
   }, [theme]);
 
   // ── Filters from URL ─────────────────────────────────────────────────────
-  const typeFilter  = (searchParams.get('type')   ?? 'Todos') as TypeFilter;
-  const period      = (searchParams.get('period') ?? 'todos') as Period;
-  const periodValue = searchParams.get('pv') ?? '';
+  const typeFilter    = (searchParams.get('type')     ?? 'Todos') as TypeFilter;
+  const period        = (searchParams.get('period')   ?? 'todos') as Period;
+  const periodValue   = searchParams.get('pv') ?? '';
+  const campaignFilter = searchParams.get('campaign') ?? '';
 
   function setTypeFilter(v: TypeFilter) {
     setSearchParams((p) => { v === 'Todos' ? p.delete('type') : p.set('type', v); return p; }, { replace: true });
@@ -133,6 +134,9 @@ function App() {
   }
   function setPeriodValue(v: string) {
     setSearchParams((p) => { v ? p.set('pv', v) : p.delete('pv'); return p; }, { replace: true });
+  }
+  function setCampaignFilter(v: string) {
+    setSearchParams((p) => { v ? p.set('campaign', v) : p.delete('campaign'); return p; }, { replace: true });
   }
 
   // ── Report builder state ─────────────────────────────────────────────────
@@ -152,10 +156,12 @@ function App() {
   const availableDays   = useMemo(() => [...new Set(activeCalls.map((c) => c.date).filter(Boolean))].sort().reverse() as string[], [activeCalls]);
   const availableMonths = useMemo(() => [...new Set(activeCalls.map((c) => c.date?.slice(0, 7)).filter(Boolean))].sort().reverse() as string[], [activeCalls]);
   const availableYears  = useMemo(() => [...new Set(activeCalls.map((c) => c.date?.slice(0, 4)).filter(Boolean))].sort().reverse() as string[], [activeCalls]);
+  const availableQueues = useMemo(() => [...new Set(activeCalls.map((c) => c.queue).filter(Boolean))].sort() as string[], [activeCalls]);
   const hasDates = availableDays.length > 0;
 
-  const periodCalls  = useMemo(() => filterByPeriod(activeCalls, period, periodValue), [activeCalls, period, periodValue]);
-  const visibleCalls = useMemo(() => filterCalls(periodCalls, typeFilter), [periodCalls, typeFilter]);
+  const periodCalls   = useMemo(() => filterByPeriod(activeCalls, period, periodValue), [activeCalls, period, periodValue]);
+  const campaignCalls = useMemo(() => campaignFilter ? periodCalls.filter((c) => c.queue === campaignFilter) : periodCalls, [periodCalls, campaignFilter]);
+  const visibleCalls  = useMemo(() => filterCalls(campaignCalls, typeFilter), [campaignCalls, typeFilter]);
   const metrics      = useMemo(() => calculateMetrics(visibleCalls), [visibleCalls]);
 
   // Additional date range filter applied only to the chart grid
@@ -446,6 +452,18 @@ function App() {
           {/* Filters row */}
           {!isArchivos && (
             <div className="mt-3 flex flex-wrap items-center gap-2" data-no-print>
+              {availableQueues.length > 0 && (
+                <select
+                  value={campaignFilter}
+                  onChange={(e) => setCampaignFilter(e.target.value)}
+                  className="h-9 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-ink shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                  aria-label="Filtrar por campaña"
+                >
+                  <option value="">Todas las campañas</option>
+                  {availableQueues.map((q) => <option key={q} value={q}>{q}</option>)}
+                </select>
+              )}
+
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
@@ -477,6 +495,13 @@ function App() {
                   availableYears={availableYears}
                   onChange={setPeriodValue}
                 />
+              )}
+
+              {campaignFilter && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-plus-orange/10 px-3 py-1 text-xs font-semibold text-plus-orange">
+                  Campaña: {campaignFilter}
+                  <button type="button" onClick={() => setCampaignFilter('')} className="ml-0.5 hover:text-ink">×</button>
+                </span>
               )}
 
               {period !== 'todos' && periodValue && (
@@ -646,7 +671,7 @@ function App() {
                     <input
                       type="date"
                       value={chartFrom}
-                      min={availableDays.at(-1)}
+                      min={availableDays[availableDays.length - 1]}
                       max={chartTo || availableDays[0]}
                       onChange={(e) => setChartFrom(e.target.value)}
                       className="h-7 rounded-lg border border-slate-200 bg-slate-50 px-2 text-[11px] text-ink dark:border-white/10 dark:bg-white/5 dark:text-white"
@@ -655,7 +680,7 @@ function App() {
                     <input
                       type="date"
                       value={chartTo}
-                      min={chartFrom || availableDays.at(-1)}
+                      min={chartFrom || availableDays[availableDays.length - 1]}
                       max={availableDays[0]}
                       onChange={(e) => setChartTo(e.target.value)}
                       className="h-7 rounded-lg border border-slate-200 bg-slate-50 px-2 text-[11px] text-ink dark:border-white/10 dark:bg-white/5 dark:text-white"
