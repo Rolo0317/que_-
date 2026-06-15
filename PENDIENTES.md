@@ -12,9 +12,8 @@ Usa este archivo para guiarme. Dime qué número hacer primero y lo implemento.
 
 ---
 
-### 2. Selector de tipo de gráfica por panel
-**Estado:** No implementado.  
-**Pendiente:** En cada tarjeta de gráfica del "Arma tu informe", agregar un pequeño menú (íconos) para cambiar entre: Barras / Líneas / Área / Pie. Guardar la selección por chart-id en localStorage.
+### ~~2. Selector de tipo de gráfica por panel~~ ✅ Listo
+Toolbar de íconos (top-right de cada tarjeta): Barras / Barras horiz. / Líneas / Área / Pastel según la gráfica. Persiste en localStorage por chart-id.
 
 ---
 
@@ -47,6 +46,8 @@ Usa este archivo para guiarme. Dime qué número hacer primero y lo implemento.
 ---
 
 ## Ya implementado esta sesión
+- [x] **Tarea 1** — Panel "Metas" rediseñado: zone-bars de colores, sliders, descripciones en español
+- [x] **Tarea 2** — Selector de tipo de gráfica por panel (Barras/Líneas/Área/Pastel), persiste en localStorage
 - [x] Filtro de rango de fechas ("Desde / Hasta") en el panel de gráficas
 - [x] Filtro por campaña/cola en la barra de filtros
 - [x] Etiquetas de datos en gráficas adaptadas a modo oscuro y claro
