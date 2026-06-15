@@ -1,1 +1,1 @@
-﻿{ "ignoreCommand": "exit 0" }
+{ "ignoreCommand": "exit 0", "experimentalServices": { "frontend": { "root": "frontend", "routePrefix": "/", "framework": "vite" }, "backend": { "root": "backend", "entrypoint": "dist/server.js", "routePrefix": "/_/backend" } } }
