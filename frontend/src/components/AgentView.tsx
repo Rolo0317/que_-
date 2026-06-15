@@ -1,6 +1,7 @@
-import { ChevronDown, ChevronUp, Search, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Download, Search, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMemo, useState } from 'react';
+import { exportAgentsToCsv } from '../lib/exportCsv';
 import type { AgentStats } from '../types/calls';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -305,6 +306,16 @@ export function AgentView({ stats }: AgentViewProps) {
             ))}
           </div>
         </div>
+
+        {/* Export CSV */}
+        <button
+          type="button"
+          onClick={() => exportAgentsToCsv(filtered)}
+          className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-ink shadow-sm transition hover:border-que-teal dark:border-white/10 dark:bg-slate-800 dark:text-white"
+        >
+          <Download size={13} aria-hidden="true" />
+          Exportar CSV
+        </button>
 
         {/* Search */}
         <div className="relative w-full sm:w-64">

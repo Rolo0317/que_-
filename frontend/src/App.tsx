@@ -1,8 +1,9 @@
-import { BarChart3, Database, RefreshCw, ShieldCheck, TrendingUp, Users } from 'lucide-react';
+import { BarChart3, Database, Headphones, RefreshCw, ShieldCheck, TrendingUp, Users } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { AgentView } from './components/AgentView';
 import { BrandLogo } from './components/BrandLogo';
+import { CompareView } from './components/CompareView';
 import { DataManager } from './components/DataManager';
 import { DashboardFooter } from './components/DashboardFooter';
 import { FileUploader } from './components/FileUploader';
@@ -10,6 +11,7 @@ import { KpiCard } from './components/KpiCard';
 import type { KpiStatus } from './components/KpiCard';
 import { ReportBuilder } from './components/ReportBuilder';
 import type { ChartId, ReportLayout } from './components/ReportBuilder';
+import { PeriodPicker } from './components/PeriodPicker';
 import { ThemeToggle } from './components/ThemeToggle';
 import { sampleCalls } from './data/sampleCalls';
 import { fetchHealth, fetchReport, uploadReport } from './lib/api';
@@ -25,6 +27,7 @@ import {
   filterCalls,
   slaByHour,
 } from './lib/metrics';
+import { useKpiAlerts } from './lib/useKpiAlerts';
 import type { Dataset } from './types/dataset';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -48,7 +51,7 @@ const pct    = (v: number, g: number, w: number): KpiStatus => v >= g ? 'good' :
 const pctInv = (v: number, g: number, w: number): KpiStatus => v <= g ? 'good' : v <= w ? 'warning' : 'bad';
 const secInv = (v: number, g: number, w: number): KpiStatus => v <= g ? 'good' : v <= w ? 'warning' : 'bad';
 const occupancy = (v: number): KpiStatus =>
-  v >= 0.75 && v <= 0.9 ? 'good' : v >= 0.6 && v <= 0.95 ? 'warning' : 'neutral';
+  v >= 0.75 && v <= 0.90 ? 'good' : v >= 0.60 ? 'warning' : 'bad';
 
 // ─── Period filter ────────────────────────────────────────────────────────────
 import type { CallRecord } from './types/calls';
@@ -68,7 +71,7 @@ const modules: { id: Module; label: string; icon: typeof Users; abbr: string }[]
   { id: 'wfm',         label: 'WFM',        icon: Users,       abbr: 'WFM' },
   { id: 'operaciones', label: 'Operaciones', icon: TrendingUp,  abbr: 'OPS' },
   { id: 'calidad',     label: 'Calidad',     icon: ShieldCheck, abbr: 'QA' },
-  { id: 'agentes',     label: 'Agentes',     icon: Users,       abbr: 'AGT' },
+  { id: 'agentes',     label: 'Agentes',     icon: Headphones,  abbr: 'AGT' },
   { id: 'archivos',    label: 'Archivos',    icon: Database,    abbr: 'DAT' },
 ];
 
@@ -101,6 +104,7 @@ function App() {
 
   // UI
   const [activeModule, setActiveModule]     = useState<Module>('wfm');
+  const [compareId, setCompareId]           = useState<string | null>(null);
   const [selectedCharts, setSelectedCharts] = useState<ChartId[]>(['hourly', 'mix', 'scores']);
   const [layout, setLayout]                 = useState<ReportLayout>('2');
   const [apiStatus, setApiStatus]           = useState<'checking' | 'online' | 'offline'>('checking');
@@ -143,6 +147,7 @@ function App() {
   const queueData    = useMemo(() => callsByQueue(visibleCalls), [visibleCalls]);
   const agentCount   = useMemo(() => new Set(visibleCalls.map((c) => c.agent)).size, [visibleCalls]);
   const agentStats   = useMemo(() => agentDetailStats(visibleCalls), [visibleCalls]);
+  const kpiAlerts    = useKpiAlerts(visibleCalls);
 
   // ─── KPI arrays ────────────────────────────────────────────────────────────
   const wfmKpis = useMemo(() => [
@@ -194,18 +199,28 @@ function App() {
   }
 
   async function handleFile(file: File) {
-    try {
-      const report = await uploadReport(file, typeFilter);
-      addDataset({ id: `api-${Date.now()}`, name: file.name.replace(/\.xlsx$/i, ''), calls: report.data, loadedAt: new Date(), source: 'api' });
-      setApiStatus('online');
-    } catch {
-      const rows = await parseExcelFile(file);
-      if (rows.length === 0) throw new Error('El archivo está vacío o no tiene filas de datos.');
-      const allDefault = rows.every((r) => r.agent === 'Sin agente') || rows.every((r) => r.hour === 'Sin hora');
-      if (allDefault) throw new Error(`${rows.length} filas cargadas pero los encabezados no coinciden.`);
-      addDataset({ id: `excel-${Date.now()}`, name: file.name.replace(/\.xlsx$/i, ''), calls: rows, loadedAt: new Date(), source: 'excel' });
-      setApiStatus('offline');
+    // Skip API attempt when already known offline or unreachable
+    const tryApi = apiStatus !== 'offline' && navigator.onLine;
+    if (tryApi) {
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 1500);
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/health`, { signal: ctrl.signal });
+        clearTimeout(timer);
+        const report = await uploadReport(file, typeFilter);
+        addDataset({ id: `api-${Date.now()}`, name: file.name.replace(/\.xlsx$/i, ''), calls: report.data, loadedAt: new Date(), source: 'api' });
+        setApiStatus('online');
+        return;
+      } catch {
+        setApiStatus('offline');
+      }
     }
+    // Parser local
+    const rows = await parseExcelFile(file);
+    if (rows.length === 0) throw new Error('El archivo está vacío o no tiene filas de datos.');
+    const allDefault = rows.every((r) => r.agent === 'Sin agente') || rows.every((r) => r.hour === 'Sin hora');
+    if (allDefault) throw new Error(`${rows.length} filas cargadas pero los encabezados no coinciden.`);
+    addDataset({ id: `excel-${Date.now()}`, name: file.name.replace(/\.xlsx$/i, ''), calls: rows, loadedAt: new Date(), source: 'excel' });
   }
 
   async function loadApiData() {
@@ -225,44 +240,6 @@ function App() {
   const isAnalytics = activeModule === 'wfm' || activeModule === 'operaciones' || activeModule === 'calidad';
   const statusText = `${activeDataset.name} · ${visibleCalls.length} de ${activeCalls.length} registros`;
 
-  // ─── Period picker ─────────────────────────────────────────────────────────
-  const PeriodPicker = () => {
-    if (!hasDates || period === 'todos') return null;
-    if (period === 'dia') return (
-      <select
-        value={periodValue}
-        onChange={(e) => setPeriodValue(e.target.value)}
-        className="h-9 rounded-md border border-slate-300 bg-white px-2 text-xs text-ink shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-white"
-        aria-label="Seleccionar día"
-      >
-        <option value="">Todos los días</option>
-        {availableDays.map((d) => <option key={d} value={d}>{d}</option>)}
-      </select>
-    );
-    if (period === 'mes') return (
-      <select
-        value={periodValue}
-        onChange={(e) => setPeriodValue(e.target.value)}
-        className="h-9 rounded-md border border-slate-300 bg-white px-2 text-xs text-ink shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-white"
-        aria-label="Seleccionar mes"
-      >
-        <option value="">Todos los meses</option>
-        {availableMonths.map((m) => <option key={m} value={m}>{m}</option>)}
-      </select>
-    );
-    if (period === 'año') return (
-      <select
-        value={periodValue}
-        onChange={(e) => setPeriodValue(e.target.value)}
-        className="h-9 rounded-md border border-slate-300 bg-white px-2 text-xs text-ink shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-white"
-        aria-label="Seleccionar año"
-      >
-        <option value="">Todos los años</option>
-        {availableYears.map((y) => <option key={y} value={y}>{y}</option>)}
-      </select>
-    );
-    return null;
-  };
 
   return (
     <div className={theme === 'dark' ? 'dark' : ''}>
@@ -358,12 +335,16 @@ function App() {
             <div className="flex w-max items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-white/10 dark:bg-slate-900">
               {modules.map(({ id, label, icon: Icon }) => {
                 const active = activeModule === id;
+                const hasAlert =
+                  (id === 'wfm' && kpiAlerts.wfm) ||
+                  (id === 'operaciones' && kpiAlerts.operaciones) ||
+                  (id === 'calidad' && kpiAlerts.calidad);
                 return (
                   <button
                     key={id}
                     type="button"
                     onClick={() => setActiveModule(id)}
-                    className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition-all ${
+                    className={`relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition-all ${
                       active ? 'bg-ink text-white shadow dark:bg-que-teal' : 'text-slate-500 hover:text-ink dark:text-white/50 dark:hover:text-white'
                     }`}
                   >
@@ -375,6 +356,9 @@ function App() {
                       }`}>
                         {datasets.length}
                       </span>
+                    )}
+                    {hasAlert && !active && (
+                      <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500" aria-label="KPI en rojo" />
                     )}
                   </button>
                 );
@@ -409,7 +393,16 @@ function App() {
                 <option value="año">Por año</option>
               </select>
 
-              <PeriodPicker />
+              {hasDates && (
+                <PeriodPicker
+                  period={period}
+                  value={periodValue}
+                  availableDays={availableDays}
+                  availableMonths={availableMonths}
+                  availableYears={availableYears}
+                  onChange={setPeriodValue}
+                />
+              )}
 
               {/* Active filter indicator */}
               {(period !== 'todos' && periodValue) && (
@@ -427,14 +420,48 @@ function App() {
 
           {/* ═══ ARCHIVOS ═══════════════════════════════════════════════════════ */}
           {activeModule === 'archivos' && (
-            <motion.div key="archivos" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="mt-6">
+            <motion.div key="archivos" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="mt-6 space-y-6">
               <DataManager
                 datasets={datasets}
                 activeId={activeDatasetId}
                 onActivate={setActiveDatasetId}
-                onDelete={deleteDataset}
+                onDelete={(id) => { deleteDataset(id); if (compareId === id) setCompareId(null); }}
                 onUpload={handleFile}
               />
+              {/* Compare selector — solo si hay 2+ datasets */}
+              {datasets.length >= 2 && (
+                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-panel dark:border-white/10 dark:bg-slate-900">
+                  <h3 className="mb-3 text-sm font-bold text-ink dark:text-white">Comparar datasets</h3>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-white/50">
+                      <span className="h-2.5 w-2.5 rounded-full bg-que-teal flex-shrink-0" />
+                      {activeDataset.name}
+                      <span className="text-slate-300 dark:text-white/20">vs</span>
+                    </div>
+                    <select
+                      value={compareId ?? ''}
+                      onChange={(e) => setCompareId(e.target.value || null)}
+                      className="h-9 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-ink shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-white"
+                    >
+                      <option value="">— Seleccionar dataset —</option>
+                      {datasets.filter((d) => d.id !== activeDatasetId).map((d) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                    {compareId && (
+                      <button type="button" onClick={() => setCompareId(null)} className="text-xs text-slate-400 hover:text-rose-500">
+                        × Cerrar
+                      </button>
+                    )}
+                  </div>
+                  {compareId && (() => {
+                    const dsB = datasets.find((d) => d.id === compareId);
+                    return dsB ? (
+                      <CompareView datasetA={activeDataset} datasetB={dsB} onClose={() => setCompareId(null)} />
+                    ) : null;
+                  })()}
+                </div>
+              )}
             </motion.div>
           )}
 
