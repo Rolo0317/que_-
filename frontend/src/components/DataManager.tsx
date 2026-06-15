@@ -323,10 +323,10 @@ export function DataManager({ datasets, activeId, onActivate, onDelete, onUpload
                   </div>
                 </div>
                 <div>
-                  <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-[#11AEB3]/70">Columnas Vicidial (export directo)</p>
+                  <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-que-teal/70">Columnas Vicidial (export directo)</p>
                   <div className="flex flex-wrap gap-1.5">
                     {EXPECTED_COLUMNS.slice(11).map((col) => (
-                      <span key={col} className="rounded-md border border-[#11AEB3]/20 bg-[#11AEB3]/5 px-2 py-1 font-mono text-[10px] text-[#11AEB3] shadow-sm">
+                      <span key={col} className="rounded-md border border-que-teal/20 bg-que-teal/5 px-2 py-1 font-mono text-[10px] text-que-teal shadow-sm">
                         {col}
                       </span>
                     ))}

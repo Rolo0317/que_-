@@ -336,7 +336,7 @@ function App() {
             return (
               <NavLink
                 key={id}
-                to={path}
+                to={{ pathname: path, search: searchParams.toString() }}
                 title={label}
                 aria-label={label}
                 className={({ isActive }) =>
@@ -461,7 +461,7 @@ function App() {
                 return (
                   <NavLink
                     key={id}
-                    to={path}
+                    to={{ pathname: path, search: searchParams.toString() }}
                     className={({ isActive }) =>
                       `relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition-all ${
                         isActive ? 'bg-ink text-white shadow dark:bg-que-teal' : 'text-slate-500 hover:text-ink dark:text-white/50 dark:hover:text-white'

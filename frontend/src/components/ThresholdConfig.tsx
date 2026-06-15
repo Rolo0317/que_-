@@ -61,7 +61,7 @@ function SliderRow({ label, value, onChange, min, max, step, unit, dot }: {
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-slate-200 accent-[#11AEB3] dark:bg-white/10"
+        className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-slate-200 accent-que-teal dark:bg-white/10"
       />
       <span className="w-16 text-right text-sm font-bold tabular-nums text-ink dark:text-white">
         {value}{unit}

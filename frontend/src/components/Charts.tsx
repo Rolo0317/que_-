@@ -159,7 +159,7 @@ export function HourlyChart({ data }: { data: HourlyBucket[] }) {
           ) : (
             <LineChart data={data} margin={MARGIN}>
               {grid}{xAxis}{yAxis}{tooltip}
-              <Line type="monotone" dataKey="calls" stroke={BRAND.teal} strokeWidth={3} dot={{ r: 4, fill: '#11AEB3' }} name="Llamadas">
+              <Line type="monotone" dataKey="calls" stroke={BRAND.teal} strokeWidth={3} dot={{ r: 4, fill: BRAND.teal }} name="Llamadas">
                 <LabelList dataKey="calls" position="top" style={LABEL_STYLE} />
               </Line>
             </LineChart>
@@ -270,7 +270,7 @@ export function SlaHourChart({ data }: { data: SlaHourBucket[] }) {
           ) : (
             <LineChart data={data} margin={MARGIN}>
               {grid}{xAxis}{yAxis}{tooltip}{refLine}
-              <Line type="monotone" dataKey="sla" stroke={BRAND.teal} strokeWidth={3} dot={{ r: 4, fill: '#11AEB3' }} name="SLA">{label}</Line>
+              <Line type="monotone" dataKey="sla" stroke={BRAND.teal} strokeWidth={3} dot={{ r: 4, fill: BRAND.teal }} name="SLA">{label}</Line>
             </LineChart>
           )}
         </ResponsiveContainer>
@@ -286,7 +286,7 @@ export function AbandonHourChart({ data }: { data: AbandonHourBucket[] }) {
   const grid    = <CartesianGrid strokeDasharray="3 3" stroke="#dbe4ee" />;
   const xAxis   = <XAxis dataKey="hour" tick={{ fontSize: 11 }} />;
   const yAxis   = <YAxis tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11 }} />;
-  const refLine = <ReferenceLine y={5} stroke={BRAND.orange} strokeDasharray="6 3" label={{ value: 'Meta 5%', fill: '#FF9700', fontSize: 10, fontWeight: 600, position: 'insideTopRight' }} />;
+  const refLine = <ReferenceLine y={5} stroke={BRAND.orange} strokeDasharray="6 3" label={{ value: 'Meta 5%', fill: BRAND.orange, fontSize: 10, fontWeight: 600, position: 'insideTopRight' }} />;
   const label   = <LabelList dataKey="abandonRate" position="top" formatter={(v: unknown) => `${n(v).toFixed(1)}%`} style={LABEL_STYLE} />;
 
   return (
