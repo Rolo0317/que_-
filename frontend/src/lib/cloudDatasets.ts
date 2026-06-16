@@ -54,7 +54,10 @@ export async function pushCloudDataset(dataset: {
   calls: CallRecord[];
   source?: string;
 }): Promise<void> {
-  if (!supabaseUrl || !supabaseKey) return;
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('[cloud] push skipped — env vars not set');
+    return;
+  }
 
   const body = JSON.stringify({
     id: dataset.id,
@@ -73,6 +76,7 @@ export async function pushCloudDataset(dataset: {
 
   if (!res.ok) {
     const msg = await res.text().catch(() => res.statusText);
+    console.error('[cloud] push failed', res.status, msg);
     throw new Error(msg);
   }
 }

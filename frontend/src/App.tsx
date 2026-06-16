@@ -357,7 +357,7 @@ function App() {
         addDataset(dataset);
         if (isCloudEnabled) pushCloudDataset({ id: dataset.id, name: dataset.name, calls: dataset.calls, source: dataset.source })
           .then(() => toast.info('Datos disponibles para todos los usuarios'))
-          .catch(() => { /* sincronización en segundo plano — no interrumpir al usuario */ });
+          .catch((err) => { console.error('[cloud] sync error (api):', err); });
         setApiStatus('online');
         toast.success(`Dataset "${file.name.replace(/\.xlsx$/i, '')}" cargado desde API`);
         return;
@@ -375,7 +375,7 @@ function App() {
     addDataset(dataset);
     if (isCloudEnabled) pushCloudDataset({ id, name, calls: rows, source: 'excel' })
       .then(() => toast.info('Datos disponibles para todos los usuarios'))
-      .catch(() => { /* sincronización en segundo plano — no interrumpir al usuario */ });
+      .catch((err) => { console.error('[cloud] sync error (excel):', err); });
     toast.success(`"${name}" cargado · ${rows.length} registros`);
   }
 
