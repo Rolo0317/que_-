@@ -433,39 +433,6 @@ function App() {
             })}
           </nav>
 
-          {/* Reports shortcut */}
-          <div className="my-2 h-px w-10 bg-white/10" />
-          <div className="w-full px-2">
-            <button
-              type="button"
-              title="Constructor de informes"
-              aria-label="Ir al constructor de informes"
-              onClick={() =>
-                document.getElementById('report-builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-              }
-              className="group relative flex w-full flex-col items-center gap-1 rounded-xl px-1.5 py-3
-                         text-white/40 transition-colors duration-150
-                         hover:bg-white/[0.07] hover:text-white/90"
-            >
-              <BarChart3 size={20} aria-hidden="true" />
-              <span className="text-[8px] font-bold uppercase leading-none tracking-wider">REP</span>
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute left-[calc(100%+10px)] top-1/2 z-[200] w-max
-                           -translate-y-1/2 -translate-x-2 rounded-xl bg-[#0d1e22]
-                           px-3.5 py-2.5 text-xs font-semibold text-white
-                           opacity-0 shadow-2xl ring-1 ring-white/[0.08]
-                           transition-all delay-75 duration-200
-                           group-hover:translate-x-0 group-hover:opacity-100"
-              >
-                Constructor de informes
-                <span className="mt-0.5 block text-[10px] font-normal leading-snug text-white/40">
-                  Scroll hacia las graficas
-                </span>
-              </span>
-            </button>
-          </div>
-
           {/* Footer watermark */}
           <div className="mt-auto flex flex-col items-center gap-3 pb-4">
             <div className="h-px w-10 bg-white/10" />
