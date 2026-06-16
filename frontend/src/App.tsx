@@ -4,7 +4,6 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Navigate, NavLink, Route, Routes, useLocation, useSearchParams } from 'react-router-dom';
 import { AgentView } from './components/AgentView';
 import { BrandLogo } from './components/BrandLogo';
-import { CalidadView } from './components/CalidadView';
 import { CompareView } from './components/CompareView';
 import { DataManager } from './components/DataManager';
 import { DashboardFooter } from './components/DashboardFooter';
@@ -688,15 +687,6 @@ function App() {
               element={
                 <motion.div key="operaciones" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                   <OperacionesView calls={visibleCalls} thresholds={thresholds} />
-                </motion.div>
-              }
-            />
-
-            <Route
-              path="/calidad"
-              element={
-                <motion.div key="calidad" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                  <CalidadView calls={visibleCalls} thresholds={thresholds} />
                 </motion.div>
               }
             />

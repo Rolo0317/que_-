@@ -1,8 +1,8 @@
-import { Database, Headphones, ShieldCheck, TrendingUp, Users } from 'lucide-react';
+import { Database, Headphones, TrendingUp, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { KpiAlerts } from '../lib/useKpiAlerts';
 
-export type ModuleId = 'wfm' | 'operaciones' | 'calidad' | 'agentes' | 'archivos';
+export type ModuleId = 'wfm' | 'operaciones' | 'agentes' | 'archivos';
 
 export interface ModuleConfig {
   id: ModuleId;
@@ -32,15 +32,6 @@ export const MODULES: ModuleConfig[] = [
     abbr: 'OPS',
     kpiAlertKey: 'operaciones',
     description: 'Volumen y servicio — llamadas, SLA, abandono, velocidad de respuesta y duracion.',
-  },
-  {
-    id: 'calidad',
-    label: 'Calidad',
-    icon: ShieldCheck,
-    path: '/calidad',
-    abbr: 'QA',
-    kpiAlertKey: 'calidad',
-    description: 'Calidad — FCR, transferencias, QA score y satisfaccion del cliente.',
   },
   {
     id: 'agentes',

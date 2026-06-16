@@ -65,11 +65,13 @@ test.describe('Navegación entre módulos', () => {
     await expect(page.getByText(/utilizaci/i).first()).toBeVisible({ timeout: 3000 });
   });
 
-  test('navega a Calidad y muestra FCR y Transferencias', async ({ page }) => {
-    const calLink = page.getByRole('link', { name: /calidad/i }).first();
-    await calLink.click();
-    await expect(page.getByText(/primer contacto|fcr/i).first()).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText(/transferencia/i).first()).toBeVisible({ timeout: 3000 });
+  test('navega a Agentes desde Operaciones', async ({ page }) => {
+    const opsLink = page.getByRole('link', { name: /operaciones/i }).first();
+    await opsLink.click();
+    await expect(page).toHaveURL(/operaciones/);
+    const agtLink = page.getByRole('link', { name: /agentes/i }).first();
+    await agtLink.click();
+    await expect(page).toHaveURL(/agentes/);
   });
 
   test('navega a Agentes y muestra tabla', async ({ page }) => {
@@ -86,14 +88,14 @@ test.describe('Navegación entre módulos', () => {
   });
 
   test('parámetros de URL persisten al navegar entre módulos', async ({ page }) => {
-    // Usar period=mes (no se auto-resetea sin datos)
+    // Navegar a operaciones con period=mes y verificar que el param persiste al ir a WFM
     await page.goto('/operaciones?period=mes');
     await waitForApp(page);
     await expect(page).toHaveURL(/period=mes/);
 
-    const calLink = page.getByRole('link', { name: /calidad/i }).first();
-    await calLink.click();
-    // El NavLink lleva los searchParams → param persiste
+    const wfmLink = page.getByRole('link', { name: /wfm/i }).first();
+    await wfmLink.click();
+    // El NavLink lleva los searchParams → param persiste al cambiar de módulo
     await expect(page).toHaveURL(/period=mes/);
   });
 });

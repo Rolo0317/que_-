@@ -1,6 +1,6 @@
 import {
-  Award, Briefcase, CalendarDays, CheckCircle, Clock,
-  Coffee, PhoneCall, PhoneOff, RotateCcw, Shuffle,
+  Briefcase, CalendarDays, Clock,
+  Coffee, PhoneCall, PhoneOff, RotateCcw,
   TrendingDown, TrendingUp, X,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -292,35 +292,6 @@ export function ThresholdConfig({ thresholds: t, onUpdate, onReset, onClose }: P
             description="Tope de ocupación para evitar sobrecarga del agente"
             label="Máximo" value={pct(t.occupancyMax)}
             onChange={(v) => onUpdate({ occupancyMax: rat(v) })}
-          />
-        </Section>
-
-        {/* ── Calidad ──────────────────────────────────────────────────────── */}
-        <Section title="Calidad · ¿qué tan bien resolvemos?">
-          <MetricCard
-            icon={<CheckCircle size={16} />} title="Resolucion en primera llamada (FCR)"
-            description="Casos resueltos sin que el cliente tenga que volver a llamar"
-            goodLabel="Meta ≥" goodValue={pct(t.fcr.good)}
-            onGoodChange={(v) => onUpdate({ fcr: { ...t.fcr, good: rat(v) } })}
-            warnLabel="Riesgo ≥" warnValue={pct(t.fcr.warning)}
-            onWarnChange={(v) => onUpdate({ fcr: { ...t.fcr, warning: rat(v) } })}
-          />
-          <MetricCard
-            icon={<Shuffle size={16} />} title="Tasa de transferencia"
-            description="% llamadas redirigidas a otro agente o área" invert
-            goodLabel="Meta ≤" goodValue={pct(t.transferRate.good)}
-            onGoodChange={(v) => onUpdate({ transferRate: { ...t.transferRate, good: rat(v) } })}
-            warnLabel="Riesgo ≤" warnValue={pct(t.transferRate.warning)}
-            onWarnChange={(v) => onUpdate({ transferRate: { ...t.transferRate, warning: rat(v) } })}
-          />
-          <MetricCard
-            icon={<Award size={16} />} title="Puntaje de calidad (QA)"
-            description="Calificación promedio obtenida en monitoreos de calidad"
-            unit=" pts" min={0} max={100} step={1}
-            goodLabel="Meta ≥" goodValue={t.qaScore.good}
-            onGoodChange={(v) => onUpdate({ qaScore: { ...t.qaScore, good: v } })}
-            warnLabel="Riesgo ≥" warnValue={t.qaScore.warning}
-            onWarnChange={(v) => onUpdate({ qaScore: { ...t.qaScore, warning: v } })}
           />
         </Section>
 

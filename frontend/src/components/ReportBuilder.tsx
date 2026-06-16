@@ -1,4 +1,4 @@
-import { BarChart3, Check, Layers, PieChart, ShieldCheck, TrendingDown, TrendingUp } from 'lucide-react';
+import { BarChart3, Check, Layers, PieChart, TrendingDown, TrendingUp, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BrandLogo } from './BrandLogo';
 
@@ -30,17 +30,17 @@ const chartOptions = [
     id: 'scores' as ChartId,
     label: 'Calificacion',
     desc: 'Score por agente',
-    Icon: BarChart3,
+    Icon: Users,
     iconColor: 'text-violet',
     activeBorder: 'border-violet',
     activeBg: 'bg-violet/10',
-    badge: 'Calidad',
+    badge: 'Agentes',
   },
   {
     id: 'slaHour' as ChartId,
     label: 'SLA/hora',
     desc: 'Nivel de servicio vs. meta',
-    Icon: ShieldCheck,
+    Icon: TrendingUp,
     iconColor: 'text-que-teal',
     activeBorder: 'border-que-teal',
     activeBg: 'bg-que-teal/10',

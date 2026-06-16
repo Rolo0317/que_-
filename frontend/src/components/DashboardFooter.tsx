@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { BrandLogo } from './BrandLogo';
-import { CheckCircle2, PhoneCall, ShieldCheck, Users } from 'lucide-react';
+import { CheckCircle2, PhoneCall, TrendingUp, Users } from 'lucide-react';
 
 interface DashboardFooterProps {
   totalCalls: number;
@@ -12,12 +12,12 @@ export function DashboardFooter({ totalCalls, agentCount, slaPercent }: Dashboar
   const stats = [
     { Icon: PhoneCall,   label: 'Total de llamadas', value: totalCalls.toLocaleString('es'), color: 'text-que-teal' },
     { Icon: Users,       label: 'Agentes activos',   value: String(agentCount),              color: 'text-plus-orange' },
-    { Icon: ShieldCheck, label: 'SLA actual',         value: slaPercent,                      color: 'text-violet' },
+    { Icon: TrendingUp,  label: 'SLA actual',          value: slaPercent,                      color: 'text-violet' },
   ];
 
   const features = [
     'Datos en tiempo real desde Excel o API',
-    'Módulos WFM, Operaciones y Calidad',
+    'Módulos WFM, Operaciones y Agentes',
     'Exporta informes a PDF desde el constructor',
   ];
 
@@ -47,7 +47,7 @@ export function DashboardFooter({ totalCalls, agentCount, slaPercent }: Dashboar
             Plataforma de analítica BPO que unifica{' '}
             <strong className="text-que-teal">WFM</strong>,{' '}
             <strong className="text-plus-orange">Operaciones</strong> y{' '}
-            <strong className="text-violet">Calidad</strong> para decisiones rápidas y con respaldo de datos.
+            <strong className="text-violet">Agentes</strong> para decisiones rápidas y con respaldo de datos.
           </p>
           <ul className="mt-5 space-y-2">
             {features.map((f) => (

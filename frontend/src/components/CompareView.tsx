@@ -57,7 +57,6 @@ export function CompareView({ datasetA, datasetB, onClose }: CompareViewProps) {
   // KPI comparison bars
   const kpiBars = [
     { label: 'SLA',         a: mA.serviceLevel,         b: mB.serviceLevel },
-    { label: 'FCR',         a: mA.firstContactResolution, b: mB.firstContactResolution },
     { label: 'Utilización', a: mA.utilization,           b: mB.utilization },
     { label: 'Adherencia',  a: mA.adherence,             b: mB.adherence },
   ].map(({ label, a, b }) => ({ label, [datasetA.name]: +(a * 100).toFixed(2), [datasetB.name]: +(b * 100).toFixed(2) }));
@@ -100,19 +99,16 @@ export function CompareView({ datasetA, datasetB, onClose }: CompareViewProps) {
           <StatRow label="Total llamadas" a={String(mA.total)}             b={String(mB.total)} />
           <StatRow label="SLA"            a={fmt(mA.serviceLevel)}         b={fmt(mB.serviceLevel)} />
           <StatRow label="Abandono"       a={fmt(mA.abandonRate)}          b={fmt(mB.abandonRate)} />
-          <StatRow label="FCR"            a={fmt(mA.firstContactResolution)} b={fmt(mB.firstContactResolution)} />
-          <StatRow label="Transferencias" a={fmt(mA.transferRate)}         b={fmt(mB.transferRate)} />
           <StatRow label="AHT"            a={fmtS(mA.avgDuration)}         b={fmtS(mB.avgDuration)} />
           <StatRow label="ASA"            a={fmtS(mA.avgSpeedAnswer)}      b={fmtS(mB.avgSpeedAnswer)} />
           <StatRow label="Satisfacción"   a={mA.avgScore.toFixed(2)}       b={mB.avgScore.toFixed(2)} />
-          <StatRow label="QA Score"       a={mA.avgQaScore.toFixed(1)}     b={mB.avgQaScore.toFixed(1)} />
           <StatRow label="Ocupación"      a={fmt(mA.occupancy)}            b={fmt(mB.occupancy)} />
           <StatRow label="Utilización"    a={fmt(mA.utilization)}          b={fmt(mB.utilization)} />
         </div>
 
         {/* KPI bars chart */}
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-panel dark:border-white/10 dark:bg-slate-900">
-          <h3 className="mb-3 text-sm font-bold text-ink dark:text-white">KPIs de calidad (%)</h3>
+          <h3 className="mb-3 text-sm font-bold text-ink dark:text-white">KPIs principales (%)</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={kpiBars} layout="vertical">
