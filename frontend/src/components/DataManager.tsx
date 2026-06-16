@@ -9,6 +9,7 @@ import {
   Power,
   Trash2,
   Upload,
+  UploadCloud,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRef, useState } from 'react';
@@ -122,15 +123,26 @@ export function DataManager({ datasets, activeId, onActivate, onDelete, onUpload
       </div>
 
       {/* Cloud sync status banner */}
-      <div className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-medium ${
+      <div className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-xs font-semibold transition-all ${
         cloudEnabled
-          ? 'border-que-teal/30 bg-que-teal/5 text-que-teal'
+          ? 'border-que-teal/25 bg-gradient-to-r from-que-teal/8 to-teal-500/5 text-que-teal dark:border-que-teal/20 dark:from-que-teal/10 dark:to-transparent'
           : 'border-slate-200 bg-slate-50 text-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-white/30'
       }`}>
-        {cloudEnabled ? <Cloud size={14} /> : <CloudOff size={14} />}
-        {cloudEnabled
-          ? 'Sincronización en la nube activa — todos los usuarios ven los mismos datos'
-          : 'Sin sincronización en la nube — los datos son solo locales. Configura VITE_SUPABASE_URL para habilitar.'}
+        <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${
+          cloudEnabled ? 'bg-que-teal/15 dark:bg-que-teal/20' : 'bg-slate-100 dark:bg-white/10'
+        }`}>
+          {cloudEnabled
+            ? <Cloud size={14} className="text-que-teal" />
+            : <CloudOff size={14} />}
+        </div>
+        <span>
+          {cloudEnabled
+            ? 'Sincronización en la nube activa — todos los usuarios ven los mismos datos'
+            : 'Sin sincronización en la nube — los datos son solo locales.'}
+        </span>
+        {cloudEnabled && (
+          <span className="ml-auto flex h-2 w-2 flex-shrink-0 rounded-full bg-que-teal shadow-[0_0_6px_2px_rgba(17,174,179,0.5)]" />
+        )}
       </div>
 
       {/* Error message */}
@@ -158,7 +170,7 @@ export function DataManager({ datasets, activeId, onActivate, onDelete, onUpload
       {/* Dataset cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <AnimatePresence mode="popLayout">
-          {datasets.map((dataset) => {
+          {datasets.map((dataset, idx) => {
             const isActive = dataset.id === activeId;
             const Icon = SOURCE_ICON[dataset.source];
             const colorClass = SOURCE_COLOR[dataset.source];
@@ -167,106 +179,111 @@ export function DataManager({ datasets, activeId, onActivate, onDelete, onUpload
               <motion.div
                 key={dataset.id}
                 layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.2 }}
-                className={`relative flex flex-col rounded-xl border-2 bg-white p-5 shadow-panel transition-all dark:bg-slate-900 ${
+                initial={{ opacity: 0, y: 16, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.15 } }}
+                transition={{ duration: 0.3, delay: idx * 0.04, ease: [0.23, 1, 0.32, 1] }}
+                whileHover={{ y: -3, transition: { duration: 0.18 } }}
+                className={`group relative flex flex-col overflow-hidden rounded-2xl border-2 bg-white transition-all duration-300
+                            dark:bg-slate-900 ${
                   isActive
-                    ? 'border-que-teal shadow-que-teal/10'
-                    : 'border-slate-200 dark:border-white/10'
+                    ? 'border-que-teal shadow-lg shadow-que-teal/15 dark:shadow-que-teal/20'
+                    : 'border-slate-200 shadow-sm hover:border-slate-300 hover:shadow-md dark:border-white/10 dark:hover:border-white/20'
                 }`}
               >
-                {/* Active badge */}
+                {/* Active gradient top strip */}
                 {isActive && (
-                  <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-que-teal/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-que-teal">
-                    <CheckCircle2 size={10} />
-                    Activo
-                  </div>
+                  <div className="h-[3px] w-full bg-gradient-to-r from-que-teal to-teal-400" />
                 )}
 
-                {/* Source icon + badge */}
-                <div className="flex items-start gap-3">
-                  <div className={`rounded-xl border p-3 ${colorClass}`}>
-                    <Icon size={22} aria-hidden="true" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                <div className="p-5">
+                  {/* Active badge */}
+                  {isActive && (
+                    <div className="absolute right-3 top-4 flex items-center gap-1.5 rounded-full bg-que-teal/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-que-teal dark:bg-que-teal/15">
+                      <span className="h-1.5 w-1.5 rounded-full bg-que-teal shadow-[0_0_5px_1px_rgba(17,174,179,0.6)]" />
+                      Activo
+                    </div>
+                  )}
+
+                  {/* Source icon + badge */}
+                  <div className="flex items-start gap-3">
+                    <div className={`rounded-xl border p-3 transition-transform duration-200 group-hover:scale-105 ${colorClass}`}>
+                      <Icon size={20} aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0 flex-1">
                       <span className={`rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest ${colorClass}`}>
                         {SOURCE_LABEL[dataset.source]}
                       </span>
+                      <p className="mt-1.5 truncate text-sm font-bold text-ink dark:text-white" title={dataset.name}>
+                        {dataset.name}
+                      </p>
                     </div>
-                    <p className="mt-1 truncate text-sm font-bold text-ink dark:text-white" title={dataset.name}>
-                      {dataset.name}
-                    </p>
                   </div>
-                </div>
 
-                {/* Metadata */}
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <div className="rounded-lg bg-slate-50 p-2 dark:bg-white/5">
-                    <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400 dark:text-white/30">Registros</p>
-                    <p className="mt-0.5 text-sm font-bold text-ink dark:text-white tabular-nums">
-                      {dataset.calls.length.toLocaleString('es')}
-                    </p>
+                  {/* Metadata */}
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <div className="rounded-xl bg-slate-50 p-2.5 dark:bg-white/[0.04]">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-white/30">Registros</p>
+                      <p className="mt-0.5 text-sm font-bold tabular-nums text-ink dark:text-white">
+                        {dataset.calls.length.toLocaleString('es')}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-2.5 dark:bg-white/[0.04]">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-white/30">Cargado</p>
+                      <p className="mt-0.5 text-[11px] font-bold leading-tight text-ink dark:text-white">
+                        {dataset.loadedAt.toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </p>
+                      <p className="text-[10px] tabular-nums text-slate-400 dark:text-white/30">
+                        {dataset.loadedAt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
                   </div>
-                  <div className="rounded-lg bg-slate-50 p-2 dark:bg-white/5">
-                    <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400 dark:text-white/30">Cargado</p>
-                    <p className="mt-0.5 text-xs font-bold text-ink dark:text-white leading-tight">
-                      {dataset.loadedAt.toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </p>
-                    <p className="text-[10px] text-slate-400 dark:text-white/30 tabular-nums">
-                      {dataset.loadedAt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                </div>
 
-                {/* Actions */}
-                <div className="mt-4 flex items-center gap-2">
-                  {isActive ? (
-                    <button
-                      type="button"
-                      onClick={() => { if (dataset.id !== 'demo') onActivate('demo'); }}
-                      disabled={dataset.id === 'demo'}
-                      title={dataset.id !== 'demo' ? 'Apagar: volver a datos de muestra' : 'Dataset de muestra (siempre disponible)'}
-                      className={`group relative flex-1 overflow-hidden rounded-lg border py-2 text-xs font-semibold transition ${
-                        dataset.id === 'demo'
-                          ? 'cursor-default border-que-teal/30 bg-que-teal/5 text-que-teal'
-                          : 'cursor-pointer border-que-teal/30 bg-que-teal/5 text-que-teal hover:border-rose-300 hover:bg-rose-50 hover:text-rose-500 dark:hover:border-rose-700 dark:hover:bg-rose-950/30 dark:hover:text-rose-400'
-                      }`}
-                    >
-                      {/* Estado normal: En uso */}
-                      <span className={`flex items-center justify-center gap-1.5 transition-opacity duration-150 ${dataset.id !== 'demo' ? 'group-hover:opacity-0' : ''}`}>
-                        <CheckCircle2 size={12} aria-hidden="true" />
-                        En uso
-                      </span>
-                      {/* Estado hover: Apagar */}
-                      {dataset.id !== 'demo' && (
-                        <span className="absolute inset-0 flex items-center justify-center gap-1.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-                          <Power size={12} aria-hidden="true" />
-                          Apagar
+                  {/* Actions */}
+                  <div className="mt-4 flex items-center gap-2">
+                    {isActive ? (
+                      <button
+                        type="button"
+                        onClick={() => { if (dataset.id !== 'demo') onActivate('demo'); }}
+                        disabled={dataset.id === 'demo'}
+                        title={dataset.id !== 'demo' ? 'Apagar: volver a datos de muestra' : 'Dataset de muestra (siempre disponible)'}
+                        className={`group/btn relative flex-1 overflow-hidden rounded-xl border py-2 text-xs font-semibold transition-all duration-200 ${
+                          dataset.id === 'demo'
+                            ? 'cursor-default border-que-teal/30 bg-que-teal/5 text-que-teal'
+                            : 'cursor-pointer border-que-teal/30 bg-que-teal/5 text-que-teal hover:border-rose-300 hover:bg-rose-50 hover:text-rose-500 dark:hover:border-rose-700 dark:hover:bg-rose-950/30 dark:hover:text-rose-400'
+                        }`}
+                      >
+                        <span className={`flex items-center justify-center gap-1.5 transition-opacity duration-150 ${dataset.id !== 'demo' ? 'group-hover/btn:opacity-0' : ''}`}>
+                          <CheckCircle2 size={12} aria-hidden="true" />
+                          En uso
                         </span>
-                      )}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => onActivate(dataset.id)}
-                      className="flex-1 rounded-lg bg-ink py-2 text-xs font-semibold text-white transition hover:bg-slate-700 active:scale-95 dark:bg-white/10 dark:hover:bg-white/20"
-                    >
-                      Usar este
-                    </button>
-                  )}
-                  {datasets.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => onDelete(dataset.id)}
-                      title="Eliminar dataset"
-                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:border-white/10 dark:hover:border-rose-700 dark:hover:bg-rose-950/30 dark:hover:text-rose-400"
-                    >
-                      <Trash2 size={15} aria-hidden="true" />
-                    </button>
-                  )}
+                        {dataset.id !== 'demo' && (
+                          <span className="absolute inset-0 flex items-center justify-center gap-1.5 opacity-0 transition-opacity duration-150 group-hover/btn:opacity-100">
+                            <Power size={12} aria-hidden="true" />
+                            Apagar
+                          </span>
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onActivate(dataset.id)}
+                        className="flex-1 rounded-xl bg-ink py-2 text-xs font-semibold text-white transition-all duration-200 hover:bg-slate-700 active:scale-95 dark:bg-white/10 dark:hover:bg-white/20"
+                      >
+                        Usar este
+                      </button>
+                    )}
+                    {datasets.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => onDelete(dataset.id)}
+                        title="Eliminar dataset"
+                        className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-400 transition-all duration-200 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:border-white/10 dark:hover:border-rose-700 dark:hover:bg-rose-950/30 dark:hover:text-rose-400"
+                      >
+                        <Trash2 size={14} aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             );
@@ -274,48 +291,69 @@ export function DataManager({ datasets, activeId, onActivate, onDelete, onUpload
         </AnimatePresence>
       </div>
 
-      {/* Drop zone */}
+      {/* Drop zone — gradient border on drag */}
       <div
-        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={onDrop}
-        className={`rounded-xl border-2 border-dashed p-8 text-center transition-all ${
+        className={`rounded-2xl p-px transition-all duration-300 ${
           isDragging
-            ? 'border-que-teal bg-que-teal/5 dark:bg-que-teal/10'
-            : 'border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5'
+            ? 'bg-gradient-to-br from-que-teal via-plus-orange to-violet shadow-xl shadow-que-teal/20'
+            : 'bg-gradient-to-br from-slate-200 to-slate-200/50 dark:from-white/[0.08] dark:to-white/[0.04]'
         }`}
       >
-        <Upload
-          size={32}
-          className={`mx-auto mb-3 transition-colors ${isDragging ? 'text-que-teal' : 'text-slate-300 dark:text-white/20'}`}
-          aria-hidden="true"
-        />
-        <p className="text-sm font-semibold text-slate-500 dark:text-white/50">
-          {isDragging ? 'Suelta el archivo aquí' : 'Arrastra un .xlsx aquí o usa el botón Cargar Excel'}
-        </p>
-        <p className="mt-1 text-xs text-slate-400 dark:text-white/25">
-          Formato .xlsx · Máximo 15 MB
-        </p>
-
-        {/* Download template */}
-        <a
-          href="/plantilla-queplus.xlsx"
-          download="plantilla-queplus.xlsx"
-          className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-que-teal/40 bg-que-teal/5 px-3 py-1.5 text-xs font-semibold text-que-teal transition hover:bg-que-teal/10"
+        <div
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={onDrop}
+          style={isDragging ? undefined : {
+            backgroundImage: 'radial-gradient(circle, rgba(17,174,179,0.08) 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }}
+          className={`rounded-2xl p-8 text-center transition-all duration-300 ${
+            isDragging
+              ? 'bg-gradient-to-b from-que-teal/5 to-plus-orange/5 dark:from-que-teal/10 dark:to-plus-orange/5'
+              : 'bg-slate-50/80 dark:bg-[#07181c]'
+          }`}
         >
-          <Download size={12} />
-          Descargar plantilla de ejemplo
-        </a>
+          <motion.div
+            animate={isDragging ? { scale: 1.15, rotate: -8 } : { scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          >
+            <UploadCloud
+              size={36}
+              className={`mx-auto mb-3 transition-colors duration-300 ${
+                isDragging ? 'text-que-teal' : 'text-slate-300 dark:text-white/20'
+              }`}
+              aria-hidden="true"
+            />
+          </motion.div>
 
-        {/* Column guide toggle */}
-        <button
-          type="button"
-          onClick={() => setShowColumns((v) => !v)}
-          className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-que-teal hover:underline"
-        >
-          <Info size={12} />
-          {showColumns ? 'Ocultar' : 'Ver'} columnas esperadas
-        </button>
+          <p className={`text-sm font-semibold transition-colors duration-200 ${
+            isDragging ? 'text-que-teal' : 'text-slate-500 dark:text-white/50'
+          }`}>
+            {isDragging ? 'Suelta el archivo aquí' : 'Arrastra un .xlsx aquí o usa el botón Cargar Excel'}
+          </p>
+          <p className="mt-1 text-xs text-slate-400 dark:text-white/25">
+            Formato .xlsx · Máximo 15 MB
+          </p>
+
+          {/* Download template */}
+          <a
+            href="/plantilla-queplus.xlsx"
+            download="plantilla-queplus.xlsx"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-que-teal/35 bg-que-teal/5 px-3.5 py-1.5 text-xs font-semibold text-que-teal transition hover:bg-que-teal/10 hover:border-que-teal/50"
+          >
+            <Download size={12} />
+            Descargar plantilla de ejemplo
+          </a>
+
+          {/* Column guide toggle */}
+          <button
+            type="button"
+            onClick={() => setShowColumns((v) => !v)}
+            className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-que-teal hover:underline"
+          >
+            <Info size={12} />
+            {showColumns ? 'Ocultar' : 'Ver'} columnas esperadas
+          </button>
 
         <AnimatePresence>
           {showColumns && (
@@ -353,6 +391,7 @@ export function DataManager({ datasets, activeId, onActivate, onDelete, onUpload
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </div>
     </div>
   );
