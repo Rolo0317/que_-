@@ -361,87 +361,8 @@ function App() {
           {showSplash && <WorldCupSplash onClose={closeSplash} />}
         </AnimatePresence>
 
-        {/* ── Sidebar ── */}
-        <aside className="fixed inset-y-0 left-0 z-30 hidden w-20 flex-col items-center bg-ink py-5 text-white lg:flex">
-          {/* Brand */}
-          <div className="mb-4 flex flex-col items-center gap-1">
-            <BrandLogo className="w-10" />
-            <span className="text-[7px] font-bold uppercase tracking-[0.25em] text-white/30">BPO</span>
-          </div>
-          <div className="mb-2 h-px w-10 bg-white/10" />
-
-          {/* Nav */}
-          <nav aria-label="Módulos" className="flex w-full flex-col gap-0.5 px-2">
-            {MODULES.map(({ id, path, label, icon: Icon, abbr, kpiAlertKey, description }) => {
-              const hasAlert = kpiAlertKey ? kpiAlerts[kpiAlertKey] : false;
-              return (
-                <NavLink
-                  key={id}
-                  to={{ pathname: path, search: searchParams.toString() }}
-                  title={label}
-                  aria-label={label}
-                  className={({ isActive }) =>
-                    `group relative flex flex-col items-center gap-1 rounded-xl px-1.5 py-3 transition-colors duration-150 ${
-                      isActive
-                        ? 'bg-que-teal/20 text-que-teal'
-                        : 'text-white/40 hover:bg-white/[0.07] hover:text-white/90'
-                    }`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {/* Animated left-edge indicator that slides between active items */}
-                      {isActive && (
-                        <motion.span
-                          layoutId="sidebar-indicator"
-                          className="absolute bottom-2.5 left-0 top-2.5 w-[3px] rounded-r-full bg-que-teal"
-                          style={{ boxShadow: '0 0 8px rgba(17,174,179,0.65)' }}
-                          transition={{ type: 'spring', stiffness: 420, damping: 35 }}
-                        />
-                      )}
-
-                      <Icon size={20} aria-hidden="true" />
-                      <span className="text-[8px] font-bold uppercase leading-none tracking-wider">{abbr}</span>
-
-                      {/* KPI alert badge */}
-                      {hasAlert && (
-                        <span
-                          className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-[1.5px] ring-ink"
-                          aria-label="KPI fuera de meta"
-                        />
-                      )}
-
-                      {/* Tooltip — slides in from the left on hover */}
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute left-[calc(100%+10px)] top-1/2 z-[200] w-max
-                                   -translate-y-1/2 -translate-x-2 rounded-xl bg-[#0d1e22]
-                                   px-3.5 py-2.5 text-xs font-semibold text-white
-                                   opacity-0 shadow-2xl ring-1 ring-white/[0.08]
-                                   transition-all delay-75 duration-200
-                                   group-hover:translate-x-0 group-hover:opacity-100"
-                      >
-                        {label}
-                        <span className="mt-0.5 block text-[10px] font-normal leading-snug text-white/40">
-                          {description}
-                        </span>
-                      </span>
-                    </>
-                  )}
-                </NavLink>
-              );
-            })}
-          </nav>
-
-          {/* Footer watermark */}
-          <div className="mt-auto flex flex-col items-center gap-3 pb-4">
-            <div className="h-px w-10 bg-white/10" />
-            <img src="/logo-que-plus.svg" alt="" aria-hidden="true" className="w-7 opacity-[0.12]" />
-          </div>
-        </aside>
-
         {/* ── Main ── */}
-        <main className="relative mx-auto max-w-7xl px-4 py-6 lg:ml-20 lg:px-8">
+        <main className="relative mx-auto max-w-7xl px-4 py-6 lg:px-8">
 
           {/* Header */}
           <motion.header
