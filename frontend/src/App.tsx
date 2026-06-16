@@ -287,10 +287,12 @@ function App() {
     fetchCloudDatasets()
       .then(async (metas) => {
         const localIds = new Set(datasets.map((d) => d.id));
+        let firstNewId: string | null = null;
         for (const meta of metas) {
           if (localIds.has(meta.id)) continue;
           const cloud = await fetchCloudDataset(meta.id);
           if (cloud) {
+            if (!firstNewId) firstNewId = cloud.id;
             setDatasets((prev) => [
               ...prev,
               {
@@ -302,6 +304,10 @@ function App() {
               },
             ]);
           }
+        }
+        // Auto-activate the first cloud dataset if still on the empty demo
+        if (firstNewId) {
+          setActiveDatasetId((cur) => (cur === 'demo' ? firstNewId! : cur));
         }
       })
       .catch(() => { /* cloud unavailable — silent, app works offline */ });
@@ -338,19 +344,20 @@ function App() {
   }
 
   async function handleFile(file: File) {
-    const tryApi = apiStatus !== 'offline' && navigator.onLine;
+    const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
+    const tryApi = Boolean(apiUrl) && apiStatus !== 'offline' && navigator.onLine;
     if (tryApi) {
       try {
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), 1500);
-        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/health`, { signal: ctrl.signal });
+        await fetch(`${apiUrl}/health`, { signal: ctrl.signal });
         clearTimeout(timer);
         const report = await uploadReport(file, typeFilter);
         const dataset: Dataset = { id: `api-${Date.now()}`, name: file.name.replace(/\.xlsx$/i, ''), calls: report.data, loadedAt: new Date(), source: 'api' };
         addDataset(dataset);
         if (isCloudEnabled) pushCloudDataset({ id: dataset.id, name: dataset.name, calls: dataset.calls, source: dataset.source })
-          .then(() => toast.info('Datos sincronizados en la nube'))
-          .catch(() => {});
+          .then(() => toast.info('Datos sincronizados en la nube ☁'))
+          .catch((e: unknown) => toast.warning(`Nube: ${e instanceof Error ? e.message : 'error al sincronizar'}`));
         setApiStatus('online');
         toast.success(`Dataset "${file.name.replace(/\.xlsx$/i, '')}" cargado desde API`);
         return;
@@ -369,7 +376,7 @@ function App() {
     addDataset(dataset);
     if (isCloudEnabled) pushCloudDataset({ id, name, calls: rows, source: 'excel' })
       .then(() => toast.info('Datos sincronizados en la nube ☁'))
-      .catch(() => {});
+      .catch((e: unknown) => toast.warning(`Nube: ${e instanceof Error ? e.message : 'error al sincronizar'}`));
     toast.success(`"${name}" cargado · ${rows.length} registros`);
   }
 
