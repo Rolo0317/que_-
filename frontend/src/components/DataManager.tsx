@@ -1,6 +1,7 @@
 import {
   CheckCircle2,
   Cloud,
+  CloudOff,
   Database,
   Download,
   FileSpreadsheet,
@@ -55,9 +56,10 @@ interface DataManagerProps {
   onActivate: (id: string) => void;
   onDelete: (id: string) => void;
   onUpload: (file: File) => Promise<void>;
+  cloudEnabled?: boolean;
 }
 
-export function DataManager({ datasets, activeId, onActivate, onDelete, onUpload }: DataManagerProps) {
+export function DataManager({ datasets, activeId, onActivate, onDelete, onUpload, cloudEnabled = false }: DataManagerProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +119,18 @@ export function DataManager({ datasets, activeId, onActivate, onDelete, onUpload
             onChange={onInputChange}
           />
         </label>
+      </div>
+
+      {/* Cloud sync status banner */}
+      <div className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-medium ${
+        cloudEnabled
+          ? 'border-que-teal/30 bg-que-teal/5 text-que-teal'
+          : 'border-slate-200 bg-slate-50 text-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-white/30'
+      }`}>
+        {cloudEnabled ? <Cloud size={14} /> : <CloudOff size={14} />}
+        {cloudEnabled
+          ? 'Sincronización en la nube activa — todos los usuarios ven los mismos datos'
+          : 'Sin sincronización en la nube — los datos son solo locales. Configura VITE_SUPABASE_URL para habilitar.'}
       </div>
 
       {/* Error message */}

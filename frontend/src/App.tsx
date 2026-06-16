@@ -20,6 +20,8 @@ import { QuickGuide } from './components/QuickGuide';
 import { ExportButton } from './components/ExportButton';
 import { LS, SS } from './lib/constants';
 import { MODULES } from './config/modules';
+import { pushCloudDataset, fetchCloudDatasets, fetchCloudDataset, deleteCloudDataset } from './lib/cloudDatasets';
+import { isCloudEnabled } from './lib/supabase';
 import { fetchHealth, fetchReport, uploadReport } from './lib/api';
 import { parseExcelFile } from './lib/excel';
 import {
@@ -279,6 +281,33 @@ function App() {
     return () => { mounted = false; };
   }, []);
 
+  // ── Cloud sync — on mount, pull datasets from Supabase not already in localStorage ──
+  useEffect(() => {
+    if (!isCloudEnabled) return;
+    fetchCloudDatasets()
+      .then(async (metas) => {
+        const localIds = new Set(datasets.map((d) => d.id));
+        for (const meta of metas) {
+          if (localIds.has(meta.id)) continue;
+          const cloud = await fetchCloudDataset(meta.id);
+          if (cloud) {
+            setDatasets((prev) => [
+              ...prev,
+              {
+                id: cloud.id,
+                name: cloud.name,
+                calls: cloud.calls,
+                loadedAt: new Date(cloud.loaded_at),
+                source: (cloud.source as Dataset['source']) || 'excel',
+              },
+            ]);
+          }
+        }
+      })
+      .catch(() => { /* cloud unavailable — silent, app works offline */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Persist uploaded datasets in localStorage (survives tab close + browser restart)
   useEffect(() => {
     const toSave = datasets.filter((d) => d.id !== 'demo');
@@ -305,6 +334,7 @@ function App() {
   function deleteDataset(id: string) {
     setDatasets((p) => p.filter((d) => d.id !== id));
     if (activeDatasetId === id) setActiveDatasetId('demo');
+    if (isCloudEnabled) deleteCloudDataset(id).catch(() => {});
   }
 
   async function handleFile(file: File) {
@@ -316,7 +346,11 @@ function App() {
         await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/health`, { signal: ctrl.signal });
         clearTimeout(timer);
         const report = await uploadReport(file, typeFilter);
-        addDataset({ id: `api-${Date.now()}`, name: file.name.replace(/\.xlsx$/i, ''), calls: report.data, loadedAt: new Date(), source: 'api' });
+        const dataset: Dataset = { id: `api-${Date.now()}`, name: file.name.replace(/\.xlsx$/i, ''), calls: report.data, loadedAt: new Date(), source: 'api' };
+        addDataset(dataset);
+        if (isCloudEnabled) pushCloudDataset({ id: dataset.id, name: dataset.name, calls: dataset.calls, source: dataset.source })
+          .then(() => toast.info('Datos sincronizados en la nube'))
+          .catch(() => {});
         setApiStatus('online');
         toast.success(`Dataset "${file.name.replace(/\.xlsx$/i, '')}" cargado desde API`);
         return;
@@ -330,7 +364,12 @@ function App() {
     const allDefault = rows.every((r) => r.agent === 'Sin agente') || rows.every((r) => r.hour === 'Sin hora');
     if (allDefault) throw new Error(`${rows.length} filas cargadas pero los encabezados no coinciden.`);
     const name = file.name.replace(/\.xlsx$/i, '');
-    addDataset({ id: `excel-${Date.now()}`, name, calls: rows, loadedAt: new Date(), source: 'excel' });
+    const id = `excel-${Date.now()}`;
+    const dataset: Dataset = { id, name, calls: rows, loadedAt: new Date(), source: 'excel' };
+    addDataset(dataset);
+    if (isCloudEnabled) pushCloudDataset({ id, name, calls: rows, source: 'excel' })
+      .then(() => toast.info('Datos sincronizados en la nube ☁'))
+      .catch(() => {});
     toast.success(`"${name}" cargado · ${rows.length} registros`);
   }
 
@@ -669,6 +708,7 @@ function App() {
                     onActivate={setActiveDatasetId}
                     onDelete={(id) => { deleteDataset(id); if (compareId === id) setCompareId(null); }}
                     onUpload={handleFile}
+                    cloudEnabled={isCloudEnabled}
                   />
                   {datasets.length >= 2 && (
                     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-panel dark:border-white/10 dark:bg-slate-900">

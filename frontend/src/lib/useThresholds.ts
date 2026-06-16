@@ -21,7 +21,7 @@ export const DEFAULT_THRESHOLDS: ThresholdSet = {
   occupancyMin: 0.75,
   occupancyMax: 0.90,
   fcr:          { good: 0.80, warning: 0.70 },
-  asa:          { good: 30,   warning: 60 },
+  asa:          { good: 20,   warning: 30 },  // COPC: 80/20 rule → answer in 20 s
   utilization:  { good: 0.85, warning: 0.75 },
   shrinkage:    { good: 0.25, warning: 0.35 },
   adherence:    { good: 0.95, warning: 0.90 },

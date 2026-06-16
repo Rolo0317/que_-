@@ -12,13 +12,15 @@ export function calculateMetrics(calls: CallRecord[]): Metrics {
   const inbound = calls.filter((call) => normalizeType(call.type) === 'inbound').length;
   const outbound = calls.filter((call) => normalizeType(call.type) === 'outbound').length;
   const abandoned = calls.filter((call) => Boolean(call.abandoned)).length;
-  const totalDuration = calls.reduce((sum, call) => sum + Number(call.durationSeconds || 0), 0);
+  const totalTalk = calls.reduce((sum, call) => sum + Number(call.durationSeconds || 0), 0);
   const totalScore = calls.reduce((sum, call) => sum + Number(call.score || 0), 0);
   const totalWait = calls.reduce((sum, call) => sum + Number(call.waitSeconds || 0), 0);
-  const totalTalk = calls.reduce((sum, call) => sum + Number(call.durationSeconds || 0), 0);
   const totalAvailable = calls.reduce((sum, call) => sum + Number(call.availableSeconds || 0), 0);
   const totalLogin = calls.reduce((sum, call) => sum + Number(call.loginSeconds || 0), 0);
-  const totalProductive = calls.reduce((sum, call) => sum + Number(call.productiveSeconds || 0), 0);
+  // productiveSeconds = ACW (After Call Work / dispo_sec in Vicidial)
+  const totalACW = calls.reduce((sum, call) => sum + Number(call.productiveSeconds || 0), 0);
+  // COPC Handle Time = Talk + Hold + ACW (length_in_sec already includes hold in Vicidial)
+  const totalHandleTime = totalTalk + totalACW;
   const totalScheduled = calls.reduce((sum, call) => sum + Number(call.scheduledSeconds || 0), 0);
   const totalShrinkage = calls.reduce((sum, call) => sum + Number(call.shrinkageSeconds || 0), 0);
   const totalAdherence = calls.reduce((sum, call) => sum + Number(call.adherenceSeconds || 0), 0);
@@ -26,26 +28,31 @@ export function calculateMetrics(calls: CallRecord[]): Metrics {
   const present = calls.filter((call) => call.staffed !== false && call.attendanceStatus !== 'Ausente').length;
   const withinSla = calls.filter((call) => Boolean(call.answeredWithinSla)).length;
   const firstContact = calls.filter((call) => Boolean(call.resolvedFirstContact)).length;
-  const transferred = calls.filter((call) => Boolean(call.transferred)).length;
+  const transferredCount = calls.filter((call) => Boolean(call.transferred)).length;
   const qaRows = calls.filter((call) => Number(call.qaScore || 0) > 0);
   const totalQa = qaRows.reduce((sum, call) => sum + Number(call.qaScore || 0), 0);
+  // COPC AHT uses only handled (non-abandoned) calls in the denominator
+  const handled = total - abandoned;
 
   return {
     total,
     inbound,
     outbound,
     abandonRate: total ? abandoned / total : 0,
-    avgDuration: total ? totalDuration / total : 0,
+    // COPC AHT = (Talk + Hold + ACW) / Contacts Handled  (abandoned excluded from denominator)
+    avgDuration: handled ? totalHandleTime / handled : 0,
     avgScore: total ? totalScore / total : 0,
-    occupancy: totalTalk + totalAvailable ? totalTalk / (totalTalk + totalAvailable) : 0,
-    utilization: totalLogin ? totalProductive / totalLogin : 0,
+    // COPC Occupancy = Handle Time / (Handle Time + Available Time)
+    occupancy: totalHandleTime + totalAvailable ? totalHandleTime / (totalHandleTime + totalAvailable) : 0,
+    // COPC Utilization = Handle Time / Login Time
+    utilization: totalLogin ? totalHandleTime / totalLogin : 0,
     shrinkage: totalScheduled ? totalShrinkage / totalScheduled : 0,
     adherence: totalScheduled ? totalAdherence / totalScheduled : 0,
     attendance: scheduled ? present / scheduled : 0,
     serviceLevel: total ? withinSla / total : 0,
     avgSpeedAnswer: total ? totalWait / total : 0,
     firstContactResolution: total ? firstContact / total : 0,
-    transferRate: total ? transferred / total : 0,
+    transferRate: total ? transferredCount / total : 0,
     avgQaScore: qaRows.length ? totalQa / qaRows.length : 0,
   };
 }

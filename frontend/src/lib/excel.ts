@@ -78,6 +78,9 @@ const columnMap: Record<string, keyof CallRecord> = {
   dispo_sec: 'productiveSeconds',
 };
 
+// COPC CX: calls answered within this many seconds count toward SLA (80/20 standard)
+const SLA_WAIT_THRESHOLD_SEC = 20;
+
 // Vicidial raw columns that need special handling (not mapped via columnMap)
 const VICIDIAL_RAW_KEYS = new Set(['calldate', 'call_date', 'eventtime', 'event_time', 'status', 'estado']);
 
@@ -162,10 +165,12 @@ export async function parseExcelFile(file: File): Promise<CallRecord[]> {
       hour: vicidialHour ?? String(normalized.hour || 'Sin hora'),
       durationSeconds: Number(normalized.durationSeconds || 0),
       waitSeconds: Number(normalized.waitSeconds || 0),
-      abandoned: parseBool(normalized.abandoned, false) ?? false,
-      answeredWithinSla: parseBool(normalized.answeredWithinSla),
-      resolvedFirstContact: parseBool(normalized.resolvedFirstContact),
-      transferred: parseBool(normalized.transferred),
+      // For Vicidial data, statusFields provides the derived boolean values from the status code.
+      // parseBool uses the statusFields value as fallback when the column is absent.
+      abandoned: parseBool(normalized.abandoned, statusFields.abandoned ?? false) ?? false,
+      answeredWithinSla: parseBool(normalized.answeredWithinSla, statusFields.answeredWithinSla),
+      resolvedFirstContact: parseBool(normalized.resolvedFirstContact, statusFields.resolvedFirstContact),
+      transferred: parseBool(normalized.transferred, statusFields.transferred),
       score: Number(normalized.score || 0),
       qaScore: Number(normalized.qaScore || 0) || undefined,
       scheduledSeconds: Number(normalized.scheduledSeconds || 0) || undefined,
@@ -178,6 +183,12 @@ export async function parseExcelFile(file: File): Promise<CallRecord[]> {
       staffed: normalized.staffed === undefined ? true : parseBool(normalized.staffed, true),
       attendanceStatus: String(normalized.attendanceStatus || 'Presente'),
     };
+
+    // COPC SLA: for Vicidial data, an answered call only counts as "within SLA" if the
+    // caller waited ≤ SLA_WAIT_THRESHOLD_SEC in queue (COPC 80/20 standard = 20 s).
+    if (vicidialStatus && raw.answeredWithinSla) {
+      raw.answeredWithinSla = raw.waitSeconds <= SLA_WAIT_THRESHOLD_SEC;
+    }
 
     // Import schema lazily to avoid adding zod to main bundle
     import('./schema').then(({ CallRecordSchema }) => {
