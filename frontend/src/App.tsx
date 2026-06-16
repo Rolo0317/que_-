@@ -356,14 +356,13 @@ function App() {
         const dataset: Dataset = { id: `api-${Date.now()}`, name: file.name.replace(/\.xlsx$/i, ''), calls: report.data, loadedAt: new Date(), source: 'api' };
         addDataset(dataset);
         if (isCloudEnabled) pushCloudDataset({ id: dataset.id, name: dataset.name, calls: dataset.calls, source: dataset.source })
-          .then(() => toast.info('Datos sincronizados en la nube ☁'))
-          .catch((e: unknown) => toast.warning(`Nube: ${e instanceof Error ? e.message : 'error al sincronizar'}`));
+          .then(() => toast.info('Datos disponibles para todos los usuarios'))
+          .catch(() => { /* sincronización en segundo plano — no interrumpir al usuario */ });
         setApiStatus('online');
         toast.success(`Dataset "${file.name.replace(/\.xlsx$/i, '')}" cargado desde API`);
         return;
       } catch {
         setApiStatus('offline');
-        toast.warning('Backend offline — usando parser local');
       }
     }
     const rows = await parseExcelFile(file);
@@ -375,8 +374,8 @@ function App() {
     const dataset: Dataset = { id, name, calls: rows, loadedAt: new Date(), source: 'excel' };
     addDataset(dataset);
     if (isCloudEnabled) pushCloudDataset({ id, name, calls: rows, source: 'excel' })
-      .then(() => toast.info('Datos sincronizados en la nube ☁'))
-      .catch((e: unknown) => toast.warning(`Nube: ${e instanceof Error ? e.message : 'error al sincronizar'}`));
+      .then(() => toast.info('Datos disponibles para todos los usuarios'))
+      .catch(() => { /* sincronización en segundo plano — no interrumpir al usuario */ });
     toast.success(`"${name}" cargado · ${rows.length} registros`);
   }
 

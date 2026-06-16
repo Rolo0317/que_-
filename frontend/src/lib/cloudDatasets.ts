@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, supabaseUrl, supabaseKey } from './supabase';
 import type { CallRecord } from '../types/calls';
 
 export interface CloudDatasetMeta {
@@ -13,7 +13,17 @@ export interface CloudDataset extends CloudDatasetMeta {
   calls: CallRecord[];
 }
 
-// ── Read ─────────────────────────────────────────────────────────────────────
+// Headers used for all direct REST API calls (avoids supabase-js ISO-8859-1 header issue)
+function restHeaders(extra?: Record<string, string>): Record<string, string> {
+  return {
+    apikey: supabaseKey,
+    Authorization: `Bearer ${supabaseKey}`,
+    'Content-Type': 'application/json',
+    ...extra,
+  };
+}
+
+// ── Read (uses supabase-js — reads don't trigger the header issue) ────────────
 
 export async function fetchCloudDatasets(): Promise<CloudDatasetMeta[]> {
   if (!supabase) return [];
@@ -36,7 +46,7 @@ export async function fetchCloudDataset(id: string): Promise<CloudDataset | null
   return data as CloudDataset;
 }
 
-// ── Write ────────────────────────────────────────────────────────────────────
+// ── Write (uses raw fetch to avoid browser ISO-8859-1 restriction) ───────────
 
 export async function pushCloudDataset(dataset: {
   id: string;
@@ -44,8 +54,9 @@ export async function pushCloudDataset(dataset: {
   calls: CallRecord[];
   source?: string;
 }): Promise<void> {
-  if (!supabase) return;
-  const { error } = await supabase.from('datasets').upsert({
+  if (!supabaseUrl || !supabaseKey) return;
+
+  const body = JSON.stringify({
     id: dataset.id,
     name: dataset.name,
     calls: dataset.calls,
@@ -53,11 +64,29 @@ export async function pushCloudDataset(dataset: {
     loaded_at: new Date().toISOString(),
     source: dataset.source ?? 'excel',
   });
-  if (error) throw new Error(error.message);
+
+  const res = await fetch(`${supabaseUrl}/rest/v1/datasets`, {
+    method: 'POST',
+    headers: restHeaders({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
+    body,
+  });
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => res.statusText);
+    throw new Error(msg);
+  }
 }
 
 export async function deleteCloudDataset(id: string): Promise<void> {
-  if (!supabase) return;
-  const { error } = await supabase.from('datasets').delete().eq('id', id);
-  if (error) throw new Error(error.message);
+  if (!supabaseUrl || !supabaseKey) return;
+
+  const res = await fetch(
+    `${supabaseUrl}/rest/v1/datasets?id=eq.${encodeURIComponent(id)}`,
+    { method: 'DELETE', headers: restHeaders() },
+  );
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => res.statusText);
+    throw new Error(msg);
+  }
 }

@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+export const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? '';
+export const supabaseKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? '';
 
-// Returns null when env vars are not configured — app falls back to localStorage only
+// supabase-js client — used only for reads (SELECT)
+// Writes use raw fetch to avoid browser ISO-8859-1 header restriction with sb_publishable_ keys
 export const supabase = supabaseUrl && supabaseKey
   ? createClient(supabaseUrl, supabaseKey)
   : null;
 
-export const isCloudEnabled = Boolean(supabase);
+export const isCloudEnabled = Boolean(supabaseUrl && supabaseKey);
