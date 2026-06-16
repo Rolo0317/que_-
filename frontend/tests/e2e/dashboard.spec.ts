@@ -183,8 +183,8 @@ test.describe('Gestión de datos', () => {
 
   test('muestra la sección de gestión con al menos un dataset (demo)', async ({ page }) => {
     await expect(page.getByText(/gestión de datos/i)).toBeVisible();
-    // El dataset demo siempre existe
-    const cards = page.locator('.rounded-xl.border-2');
+    // El dataset demo siempre existe — las cards usan rounded-2xl border-2 tras el upgrade de UI
+    const cards = page.locator('.rounded-2xl.border-2');
     await expect(cards.first()).toBeVisible({ timeout: 3000 });
   });
 
@@ -194,7 +194,8 @@ test.describe('Gestión de datos', () => {
   });
 
   test('zona de arrastre está presente', async ({ page }) => {
-    const dropzone = page.locator('[class*="border-dashed"]').first();
+    // La drop zone usa un wrapper de gradiente en lugar de border-dashed tras el upgrade de UI
+    const dropzone = page.getByText(/arrastra un .xlsx aquí/i);
     await expect(dropzone).toBeVisible();
   });
 
