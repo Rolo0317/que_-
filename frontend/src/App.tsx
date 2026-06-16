@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { BarChart3, Calendar, RefreshCw, Settings, Upload } from 'lucide-react';
+import { BarChart3, Calendar, Settings, Upload } from 'lucide-react';
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Navigate, NavLink, Route, Routes, useLocation, useSearchParams } from 'react-router-dom';
 import { AgentView } from './components/AgentView';
@@ -22,7 +22,6 @@ import { LS, SS } from './lib/constants';
 import { MODULES } from './config/modules';
 import { pushCloudDataset, fetchCloudDatasets, fetchCloudDataset, deleteCloudDataset } from './lib/cloudDatasets';
 import { isCloudEnabled } from './lib/supabase';
-import { fetchHealth, fetchReport, uploadReport } from './lib/api';
 import { parseExcelFile } from './lib/excel';
 import {
   abandonByHour, agentDetailStats, agentScores, calculateMetrics,
@@ -107,7 +106,6 @@ function App() {
 
   const [activeDatasetId, setActiveDatasetId] = useState<string>(() => localStorage.getItem(LS.activeDataset) ?? 'demo');
   const [compareId, setCompareId]             = useState<string | null>(null);
-  const [apiStatus, setApiStatus]             = useState<'checking' | 'online' | 'offline'>('checking');
 
   // ── Theme ────────────────────────────────────────────────────────────────
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -272,15 +270,6 @@ function App() {
     return parts.length > 0 ? parts.join(' | ') : 'Sin filtros';
   }, [campaignFilter, typeFilter, period, periodValue]);
 
-  // ── API ──────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    let mounted = true;
-    fetchHealth()
-      .then(() => { if (mounted) setApiStatus('online'); })
-      .catch(() => { if (mounted) setApiStatus('offline'); });
-    return () => { mounted = false; };
-  }, []);
-
   // ── Cloud sync — on mount, pull datasets from Supabase not already in localStorage ──
   useEffect(() => {
     if (!isCloudEnabled) return;
@@ -344,27 +333,6 @@ function App() {
   }
 
   async function handleFile(file: File) {
-    const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
-    const tryApi = Boolean(apiUrl) && apiStatus !== 'offline' && navigator.onLine;
-    if (tryApi) {
-      try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 1500);
-        await fetch(`${apiUrl}/health`, { signal: ctrl.signal });
-        clearTimeout(timer);
-        const report = await uploadReport(file, typeFilter);
-        const dataset: Dataset = { id: `api-${Date.now()}`, name: file.name.replace(/\.xlsx$/i, ''), calls: report.data, loadedAt: new Date(), source: 'api' };
-        addDataset(dataset);
-        if (isCloudEnabled) pushCloudDataset({ id: dataset.id, name: dataset.name, calls: dataset.calls, source: dataset.source })
-          .then(() => toast.info('Datos disponibles para todos los usuarios'))
-          .catch((err) => { console.error('[cloud] sync error (api):', err); });
-        setApiStatus('online');
-        toast.success(`Dataset "${file.name.replace(/\.xlsx$/i, '')}" cargado desde API`);
-        return;
-      } catch {
-        setApiStatus('offline');
-      }
-    }
     const rows = await parseExcelFile(file);
     if (rows.length === 0) throw new Error('El archivo está vacío o no tiene filas de datos.');
     const allDefault = rows.every((r) => r.agent === 'Sin agente') || rows.every((r) => r.hour === 'Sin hora');
@@ -379,16 +347,6 @@ function App() {
     toast.success(`"${name}" cargado · ${rows.length} registros`);
   }
 
-  async function loadApiData() {
-    try {
-      const report = await fetchReport(typeFilter);
-      const name = `API ${new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}`;
-      addDataset({ id: `api-${Date.now()}`, name, calls: report.data, loadedAt: new Date(), source: 'api' });
-      toast.success(`Dataset API cargado · ${report.data.length} registros`);
-    } catch {
-      toast.error('No se pudo conectar al backend');
-    }
-  }
 
 
   return (
@@ -469,12 +427,6 @@ function App() {
               <h1 className="mt-1 text-2xl font-semibold text-ink dark:text-white sm:text-3xl">Dashboard de call center</h1>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                 <span className="max-w-xs truncate text-slate-600 dark:text-white/60">{statusText}</span>
-                <span className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium dark:border-white/10 dark:bg-white/10 dark:text-white">
-                  <span className={`h-2 w-2 rounded-full ${
-                    apiStatus === 'online' ? 'bg-que-teal' : apiStatus === 'offline' ? 'bg-coral' : 'bg-slate-300'
-                  }`} />
-                  API {apiStatus === 'online' ? 'online' : apiStatus === 'offline' ? 'offline' : 'verificando'}
-                </span>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2" data-no-print>
@@ -491,15 +443,6 @@ function App() {
               >
                 <Settings size={15} aria-hidden="true" />
                 <span className="hidden sm:inline">Metas</span>
-              </button>
-              <button
-                type="button"
-                onClick={loadApiData}
-                aria-label="Sincronizar desde API"
-                className="flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-ink shadow-sm transition hover:border-que-teal dark:border-white/10 dark:bg-slate-900 dark:text-white"
-              >
-                <RefreshCw size={15} aria-hidden="true" />
-                <span className="hidden sm:inline">API</span>
               </button>
               <ExportButton
                 options={{
