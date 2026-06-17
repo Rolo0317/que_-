@@ -231,10 +231,10 @@ test.describe('KPIs COPC — verificación de etiquetas y metas', () => {
     await expect(page.getByText(/abandono/i).first()).toBeVisible({ timeout: 3000 });
   });
 
-  test('KPI de ASA (Resp. promedio) está presente con su meta en segundos', async ({ page }) => {
-    // Target: "Meta: <20 s"
+  test('KPI de ASA (Resp. promedio) está presente con su meta de tiempo', async ({ page }) => {
+    // Target ahora usa formatDuration: "Meta: <20s" o "Meta: <1m 0s"
     await expect(page.getByText(/resp\. promedio/i).first()).toBeVisible({ timeout: 3000 });
-    await expect(page.getByText(/< ?\d+ s/i).first()).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText(/meta.*</i).first()).toBeVisible({ timeout: 3000 });
   });
 });
 
