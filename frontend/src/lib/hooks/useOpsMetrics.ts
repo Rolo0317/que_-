@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { calculateMetrics } from '../metrics';
+import { formatDuration } from '../format';
 import type { KpiStatus } from '../../components/KpiCard';
 import type { ThresholdSet } from '../useThresholds';
 import type { CallRecord } from '../../types/calls';
 
-const fmt  = (v: number) => `${(v * 100).toFixed(2)}%`;
-const fmtS = (s: number) => `${Math.round(s)} s`;
+const fmt = (v: number) => `${(v * 100).toFixed(2)}%`;
 
 type Kpi = {
   label: string; value: string | number; helper: string;
@@ -69,16 +69,16 @@ export function useOpsMetrics(calls: CallRecord[], thresholds: ThresholdSet) {
       },
       {
         label: 'Resp. promedio',
-        value: fmtS(metrics.avgSpeedAnswer),
+        value: formatDuration(metrics.avgSpeedAnswer),
         helper: 'Espera antes de atender',
-        target: `Meta: <${t.asa.good} s`,
+        target: `Meta: <${formatDuration(t.asa.good)}`,
         status: secInv(metrics.avgSpeedAnswer, t.asa.good, t.asa.warning),
         description:
           'ASA (Average Speed of Answer): tiempo promedio en segundos que espera un cliente hasta que un agente contesta. Mientras menor, mejor experiencia para el cliente.',
       },
       {
         label: 'Duración media',
-        value: fmtS(metrics.avgDuration),
+        value: formatDuration(metrics.avgDuration),
         helper: 'Por llamada',
         status: 'neutral',
         description:

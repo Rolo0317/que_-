@@ -25,7 +25,8 @@ interface CompareViewProps {
 }
 
 const fmt  = (v: number) => `${(v * 100).toFixed(2)}%`;
-const fmtS = (s: number) => `${Math.round(s)}s`;
+import { formatDuration } from '../lib/format';
+const fmtS = formatDuration;
 
 function StatRow({ label, a, b }: { label: string; a: string; b: string }) {
   return (

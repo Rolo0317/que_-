@@ -10,3 +10,7 @@ Dockerfile.local
 .DS_Store
 
 .vercel
+
+# Reportes de Playwright: se generan en cada corrida
+playwright-report/
+test-results/

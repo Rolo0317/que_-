@@ -65,11 +65,25 @@ function parseAnimatable(val: string | number): { raw: number; fmt: (n: number) 
     const dec = decPart.length;
     return { raw, fmt: (n) => `${n.toFixed(dec)}%` };
   }
-  // Seconds: "23 s"
+  // Duration: "38m 41s" or "5m 0s"
+  const mmss = /^(\d+)m\s*(\d+)s$/.exec(val.trim());
+  if (mmss) {
+    const raw = parseInt(mmss[1]) * 60 + parseInt(mmss[2]);
+    return {
+      raw,
+      fmt: (n) => {
+        const t = Math.round(n);
+        const m = Math.floor(t / 60);
+        const s = t % 60;
+        return m > 0 ? `${m}m ${s}s` : `${s}s`;
+      },
+    };
+  }
+  // Seconds short: "23s" or "23 s"
   const sec = /^(\d[\d,.]*)[\s]*s$/.exec(val);
   if (sec) {
     const raw = parseFloat(sec[1].replace(',', '.'));
-    return { raw, fmt: (n) => `${Math.round(n)} s` };
+    return { raw, fmt: (n) => `${Math.round(n)}s` };
   }
   // Integer with thousand-separators: "7.461" or "7,461"
   if (/^[\d.,\s]+$/.test(val.trim())) {
