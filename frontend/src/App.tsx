@@ -125,20 +125,20 @@ function App() {
   const campaignFilter = searchParams.get('campaign') ?? '';
 
   function setTypeFilter(v: TypeFilter) {
-    setSearchParams((p) => { v === 'Todos' ? p.delete('type') : p.set('type', v); return p; }, { replace: true });
+    setSearchParams((p) => { if (v === 'Todos') p.delete('type'); else p.set('type', v); return p; }, { replace: true });
   }
   function setPeriod(v: Period) {
     setSearchParams((p) => {
-      v === 'todos' ? p.delete('period') : p.set('period', v);
+      if (v === 'todos') p.delete('period'); else p.set('period', v);
       p.delete('pv');
       return p;
     }, { replace: true });
   }
   function setPeriodValue(v: string) {
-    setSearchParams((p) => { v ? p.set('pv', v) : p.delete('pv'); return p; }, { replace: true });
+    setSearchParams((p) => { if (v) p.set('pv', v); else p.delete('pv'); return p; }, { replace: true });
   }
   function setCampaignFilter(v: string) {
-    setSearchParams((p) => { v ? p.set('campaign', v) : p.delete('campaign'); return p; }, { replace: true });
+    setSearchParams((p) => { if (v) p.set('campaign', v); else p.delete('campaign'); return p; }, { replace: true });
   }
 
   // ── Report builder state — persisted in localStorage ────────────────────

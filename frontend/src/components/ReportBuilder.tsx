@@ -1,4 +1,4 @@
-import { BarChart3, Check, Layers, PieChart, TrendingDown, TrendingUp, Users } from 'lucide-react';
+import { Check, Layers, PieChart, TrendingDown, TrendingUp, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BrandLogo } from './BrandLogo';
 
